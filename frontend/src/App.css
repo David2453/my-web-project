@@ -1,0 +1,18 @@
+.App {
+  text-align: center;
+  min-height: 100vh;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+body{
+  background-image: url('../public/images/home_background.jpg');
+
+}

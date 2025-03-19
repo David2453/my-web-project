@@ -1,0 +1,192 @@
+/* Register.css - Styling for Bike Rental Shop Registration Page */
+
+/* Apply a background color to the entire page */
+
+  
+  /* Main container styling */
+  .container {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+  
+  /* Card styling */
+  .card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.15);
+  }
+  
+  /* Add an accent border to the top of the card */
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(to right, #4CAF50, #8BC34A);
+  }
+  
+  .card-body {
+    padding: 2.5rem !important;
+  }
+  
+  /* Heading styles */
+  h2 {
+    color: #2e3d49;
+    font-weight: 700;
+    margin-bottom: 1.5rem !important;
+    position: relative;
+    padding-bottom: 15px;
+  }
+  
+  h2::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(to right, #4CAF50, #8BC34A);
+  }
+  
+  /* Form control styling */
+  .form-control {
+    border-radius: 8px;
+    padding: 12px 15px;
+    border: 1px solid #dee2e6;
+    transition: all 0.3s ease;
+  }
+  
+  .form-control:focus {
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
+  }
+  
+  .form-label {
+    font-weight: 600;
+    color: #566573;
+    margin-bottom: 0.5rem;
+  }
+  
+  .form-text {
+    color: #7f8c8d;
+    font-size: 0.85rem;
+  }
+  
+  /* Checkbox styling */
+  .form-check-input {
+    width: 18px;
+    height: 18px;
+    margin-top: 0.3rem;
+  }
+  
+  .form-check-input:checked {
+    background-color: #4CAF50;
+    border-color: #4CAF50;
+  }
+  
+  .form-check-label {
+    padding-left: 0.3rem;
+  }
+  
+  /* Link styling */
+  a {
+    color: #4CAF50;
+    text-decoration: none;
+    transition: color 0.3s ease;
+  }
+  
+  a:hover {
+    color: #2E7D32;
+    text-decoration: underline;
+  }
+  
+  /* Button styling */
+  .btn-primary {
+    background-color: #4CAF50 !important;
+    border-color: #4CAF50 !important;
+    border-radius: 30px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
+  }
+  
+  .btn-primary:hover, .btn-primary:focus {
+    background-color: #388E3C !important;
+    border-color: #388E3C !important;
+    box-shadow: 0 6px 15px rgba(76, 175, 80, 0.4);
+    transform: translateY(-2px);
+  }
+  
+  .btn-primary:disabled {
+    background-color: #81C784 !important;
+    border-color: #81C784 !important;
+    cursor: not-allowed;
+    opacity: 0.8;
+  }
+  
+  /* Alert styling */
+  .alert {
+    border-radius: 8px;
+    font-weight: 500;
+  }
+  
+  .alert-success {
+    background-color: #e8f5e9;
+    border-color: #c8e6c9;
+    color: #2e7d32;
+  }
+  
+  .alert-danger {
+    background-color: #ffebee;
+    border-color: #ffcdd2;
+    color: #c62828;
+  }
+  
+  /* Invalid feedback styling */
+  .invalid-feedback {
+    font-weight: 500;
+    font-size: 0.85rem;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .card-body {
+      padding: 1.5rem !important;
+    }
+    
+    h2 {
+      font-size: 1.5rem;
+    }
+  }
+  
+  /* Add a bicycle icon to the create account button */
+  .btn-primary::before {
+    content: '🚲 ';
+    margin-right: 5px;
+  }
+  
+  /* Add a subtle bike pattern background to the page */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.03;
+    z-index: -1;
+    /* background-image: url(""); */
+    background-repeat: repeat;
+    background-size: 80px 80px;
+  }
