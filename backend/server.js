@@ -1,3 +1,4 @@
+// backend/server.js
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -18,6 +19,7 @@ mongoose.connect(process.env.MONGO_URI)
 // Routes
 app.use('/api/users', require('./routes/users'));
 app.use('/api/auth', require('./routes/auth'));
-// Add more routes based on your application needs
+app.use('/api/bikes', require('./routes/bikes'));
+app.use('/api/locations', require('./routes/locations'));
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
