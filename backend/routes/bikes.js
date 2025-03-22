@@ -1,6 +1,7 @@
 // backend/routes/bikes.js
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose'); // Make sure mongoose is imported
 const Bike = require('../models/Bikes');
 const Location = require('../models/Locations');
 const auth = require('../middleware/auth');
@@ -32,7 +33,7 @@ router.get('/purchase', async (req, res) => {
   }
 });
 
-// @route   GET api/bikes/rental/:locationId
+// @route   GET api/bikes/rental/:locationParam
 // @desc    Get bikes available for rental at a specific location
 // @access  Public
 router.get('/rental/:locationParam', async (req, res) => {
@@ -71,48 +72,7 @@ router.get('/rental/:locationParam', async (req, res) => {
       console.error('Error fetching bikes by location:', err.message);
       res.status(500).send('Server error');
     }
-  });
-
-// @route   GET api/bikes/rental/:locationId
-// @desc    Get bikes available for rental at a specific location
-// @access  Public
-// backend/routes/bikes.js - update the rental route:
-
-// @route   GET api/bikes/rental/:locationId
-// @desc    Get bikes available for rental at a specific location
-// @access  Public
-router.get('/rental/:locationId', async (req, res) => {
-    try {
-      const locationId = req.params.locationId;
-      console.log('Fetching bikes for location:', locationId);
-      
-      // Ensure locationId is a valid ObjectId
-      let locationObjectId;
-      try {
-        locationObjectId = new mongoose.Types.ObjectId(locationId);
-      } catch (err) {
-        console.log('Invalid location ID format');
-        return res.status(400).json({ msg: 'Invalid location ID' });
-      }
-  
-      // Find bikes with rental inventory at the specified location
-      const bikes = await Bike.find({
-        'rentalInventory': {
-          $elemMatch: {
-            'location': locationObjectId,
-            'stock': { $gt: 0 }
-          }
-        }
-      }).populate('rentalInventory.location', 'name city');
-      
-      console.log(`Found ${bikes.length} bikes for location ${locationId}`);
-      
-      res.json(bikes);
-    } catch (err) {
-      console.error('Error fetching bikes by location:', err.message);
-      res.status(500).send('Server error');
-    }
-  });
+});
 
 // @route   GET api/bikes/featured/purchase
 // @desc    Get featured bikes for purchase

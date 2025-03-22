@@ -1,6 +1,8 @@
+// frontend/src/components/layout/Navbar.js
 import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import './Navbar.css'; // Import the CSS file
 
 function Navbar() {
   const { authState, logout } = useContext(AuthContext);
@@ -33,7 +35,7 @@ function Navbar() {
       </li>
       <li className="nav-item">
         <Link className="nav-link" to="/cart">
-          <i className="fas fa-shopping-cart"></i> Cart
+          <i className="bi bi-cart"></i> Cart
         </Link>
       </li>
       <li className="nav-item dropdown">
@@ -45,6 +47,7 @@ function Navbar() {
           data-bs-toggle="dropdown" 
           aria-expanded="false"
         >
+          <span className="user-avatar">{user && user.username ? user.username.charAt(0).toUpperCase() : ''}</span>
           {user && user.username}
         </a>
         <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
@@ -73,7 +76,7 @@ function Navbar() {
           <span className="navbar-toggler-icon"></span>
         </button>
         <div className="collapse navbar-collapse" id="navbarNav">
-          <ul className="navbar-nav me-auto">
+          <ul className="navbar-nav main-nav me-auto">
             <li className="nav-item">
               <Link className="nav-link" to="/">Home</Link>
             </li>
@@ -84,7 +87,7 @@ function Navbar() {
               <Link className="nav-link" to="/rentals">Rentals</Link>
             </li>
           </ul>
-          <ul className="navbar-nav">
+          <ul className="navbar-nav auth-nav">
             {isAuthenticated ? authLinks : guestLinks}
           </ul>
         </div>

@@ -1,0 +1,278 @@
+/* frontend/src/components/bikes/BikeDetail.css */
+
+.bike-detail-container {
+  padding: 60px 0;
+  /* background-color: #f8f9fa; */
+  min-height: calc(100vh - 70px);
+}
+
+/* Breadcrumb navigation */
+.breadcrumb-nav {
+  margin-bottom: 30px;
+}
+
+.breadcrumb-list {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.breadcrumb-item {
+  display: flex;
+  align-items: center;
+  color: #6c757d;
+}
+
+.breadcrumb-item:not(:last-child)::after {
+  content: '/';
+  margin: 0 10px;
+  color: #ced4da;
+}
+
+.breadcrumb-link {
+  color: #6c757d;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.breadcrumb-link:hover {
+  color: #0d6efd;
+}
+
+.breadcrumb-active {
+  color: #343a40;
+  font-weight: 600;
+}
+
+/* Bike detail card */
+.bike-detail-card {
+  background-color: (rgba(255, 255, 255, 0.1));
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  margin-bottom: 40px;
+}
+
+/* Bike images gallery */
+.bike-gallery {
+  position: relative;
+  height: 500px;
+}
+
+.bike-main-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 15px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.bike-thumbnails {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.bike-thumbnail {
+  width: 80px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 5px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.bike-thumbnail:hover {
+  opacity: 1;
+}
+
+.bike-thumbnail.active {
+  opacity: 1;
+  border-color: #0d6efd;
+}
+
+/* Bike information */
+.bike-info-container {
+  padding: 30px;
+}
+
+.bike-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 5px;
+  color: #212529;
+}
+
+.bike-type {
+  font-size: 1.1rem;
+  color: #6c757d;
+  margin-bottom: 20px;
+  display: inline-block;
+  background-color: #e9ecef;
+  padding: 5px 15px;
+  border-radius: 20px;
+}
+
+.bike-description {
+  color: #495057;
+  font-size: 1.1rem;
+  line-height: 1.7;
+  margin-bottom: 30px;
+}
+
+/* Features list */
+.features-section {
+  margin-bottom: 30px;
+}
+
+.section-title {
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #212529;
+  position: relative;
+  padding-bottom: 10px;
+}
+
+.section-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 50px;
+  height: 3px;
+  background-color: #0d6efd;
+}
+
+.features-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+}
+
+.feature-icon {
+  color: #28a745;
+  margin-right: 10px;
+  font-size: 1.1rem;
+}
+
+.feature-text {
+  color: #495057;
+}
+
+/* Pricing section */
+.pricing-section {
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 30px;
+}
+
+.price-container {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 20px;
+}
+
+.current-price {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #212529;
+}
+
+.price-suffix {
+  font-size: 1.1rem;
+  color: #6c757d;
+  margin-left: 5px;
+}
+
+.original-price {
+  font-size: 1.3rem;
+  color: #6c757d;
+  text-decoration: line-through;
+  margin-left: 15px;
+}
+
+.price-save {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #28a745;
+  background-color: #e8f5e9;
+  padding: 5px 10px;
+  border-radius: 20px;
+  margin-left: 15px;
+}
+
+/* Action buttons */
+.action-buttons {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.add-to-cart-btn,
+.book-now-btn {
+  padding: 12px 25px;
+  border-radius: 5px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.add-to-cart-btn {
+  background-color: #0d6efd;
+  color: #fff;
+  border: none;
+}
+
+.add-to-cart-btn:hover {
+  background-color: #0b5ed7;
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(13, 110, 253, 0.2);
+}
+
+.book-now-btn {
+  background-color: #28a745;
+  color: #fff;
+  border: none;
+}
+
+.book-now-btn:hover {
+  background-color: #218838;
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(40, 167, 69, 0.2);
+}
+
+.wishlist-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 1px solid #dee2e6;
+  background-color: #fff;
+  color: #6c757d;
+  transition: all 0.3s ease;
+}
+
+.wishlist-btn:hover {
+  background-color: #f8f9fa;
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+.wishlist-btn.active {
+  background-color: #f8f9fa;
+  color: #dc3545;
+  border-color: #dc3545;
+}

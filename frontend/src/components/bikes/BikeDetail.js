@@ -1,6 +1,7 @@
 // src/components/bikes/BikeDetail.js
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
+import axios from 'axios';
 
 function BikeDetail() {
   const { id } = useParams();
@@ -10,34 +11,25 @@ function BikeDetail() {
   
   const [bike, setBike] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Sample bike data (in a real app, this would come from your API)
-  const sampleBike = {
-    id: parseInt(id),
-    name: 'Mountain Explorer Pro',
-    type: 'Mountain Bike',
-    description: 'A high-performance mountain bike perfect for challenging trails and outdoor adventures. Features 27 speeds, hydraulic disc brakes, and a lightweight aluminum frame.',
-    price: 899.99,
-    rentalPrice: 35.99,
-    image: 'https://www.paulscycles.co.uk/images/altitude-c70-red-carbon.jpg?width=1998&height=1998&quality=85&mode=pad&format=webp&bgcolor=ffffff',
-    features: [
-      '27-speed Shimano gears',
-      'Hydraulic disc brakes',
-      'Lightweight aluminum frame',
-      'Front suspension fork',
-      'Tubeless-ready wheels'
-    ],
-    locations: ['nyc', 'la', 'chi']
-  };
-
-  // Load bike details
+  // Load bike details from API
   useEffect(() => {
-    // In a real app, you would fetch the bike by ID from your API
-    setLoading(true);
-    setTimeout(() => {
-      setBike(sampleBike);
-      setLoading(false);
-    }, 500);
+    const fetchBikeDetails = async () => {
+      setLoading(true);
+      try {
+        const res = await axios.get(`/api/bikes/${id}`);
+        setBike(res.data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching bike details:', err);
+        setError('Failed to load bike details. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBikeDetails();
   }, [id]);
 
   if (loading) {
@@ -50,11 +42,11 @@ function BikeDetail() {
     );
   }
 
-  if (!bike) {
+  if (error || !bike) {
     return (
       <div className="container py-5">
         <div className="alert alert-danger">
-          Bike not found
+          {error || "Bike not found"}
         </div>
       </div>
     );
@@ -81,7 +73,7 @@ function BikeDetail() {
           <p className="mb-4">{bike.description}</p>
           
           {/* Features List */}
-          {bike.features && (
+          {bike.features && bike.features.length > 0 && (
             <div className="mb-4">
               <h5>Features:</h5>
               <ul className="list-group list-group-flush">
@@ -154,4 +146,4 @@ function BikeDetail() {
   );
 }
 
-export default BikeDetail;
+export default BikeDetail; 

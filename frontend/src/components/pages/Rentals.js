@@ -11,27 +11,27 @@ function Rentals() {
   const [error, setError] = useState(null);
 
   // Fetch locations
-  useEffect(() => {
-    const fetchLocations = async () => {
-      try {
-        const res = await axios.get('/api/locations');
-        // Map the response to include codes for the select dropdown
-        const locationsWithCodes = res.data.map(location => ({
-          id: location.code, // Use the code field instead of the _id
-          name: location.name
-        }));
-        setLocations(locationsWithCodes);
-        if (locationsWithCodes.length > 0) {
-          setSelectedLocation(locationsWithCodes[0].id);
-        }
-      } catch (err) {
-        setError('Failed to load locations. Please try again later.');
-        console.error('Error fetching locations:', err);
+useEffect(() => {
+  const fetchLocations = async () => {
+    try {
+      const res = await axios.get('/api/locations');
+      // Map the response to include codes for the select dropdown
+      const locationsWithCodes = res.data.map(location => ({
+        id: location.code, // Use the code field
+        name: location.name
+      }));
+      setLocations(locationsWithCodes);
+      if (locationsWithCodes.length > 0) {
+        setSelectedLocation(locationsWithCodes[0].id);
       }
-    };
-  
-    fetchLocations();
-  }, []);
+    } catch (err) {
+      setError('Failed to load locations. Please try again later.');
+      console.error('Error fetching locations:', err);
+    }
+  };
+
+  fetchLocations();
+}, []);
 
   // Fetch bikes when location is selected
   useEffect(() => {
@@ -59,7 +59,7 @@ function Rentals() {
   // Rest of your component remains the same..
 
   return (
-    <div className="container py-5">
+    <div className="container py-5" >
       <h1 className="mb-4 text-center">Bike Rentals</h1>
       <p className="lead text-center mb-5">
         Rent a bike and explore your favorite city on two wheels
@@ -114,7 +114,7 @@ function Rentals() {
                     src={bike.image} 
                     className="card-img-top" 
                     alt={bike.name}
-                    style={{ height: "260px", objectFit: "cover" }}
+                    style={{ height: "280px", objectFit: "cover" }}
                   />
                   <div className="card-body">
                     <h5 className="card-title">{bike.name}</h5>
@@ -122,7 +122,7 @@ function Rentals() {
                     <p className="card-text">{bike.description}</p>
                     <div className="d-flex justify-content-between align-items-center">
                       <p className="fs-5 mb-0"><strong>${bike.rentalPrice}</strong> / day</p>
-                      <Link to={`/bikes/${bike.id}?mode=rental&location=${selectedLocation}`} className="btn btn-primary">
+                      <Link to={`/bikes/${bike._id}?mode=rental&location=${selectedLocation}`} className="btn btn-primary">
                         Rent Now
                       </Link>
                     </div>

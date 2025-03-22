@@ -43,12 +43,14 @@ function Shop() {
         <div className="row">
           {bikes.map(bike => (
             <div className="col-md-4 mb-4" key={bike.id}>
+              
               <div className="card h-100 shadow-sm">
+                
                 <img 
                   src={bike.image} 
                   className="card-img-top" 
                   alt={bike.name} 
-                  style={{ height: "270px", objectFit: "cover" }}
+                  style={{ height: "290px", objectFit: "cover" }}
                 />
                 <div className="card-body">
                   <h5 className="card-title">{bike.name}</h5>
@@ -56,7 +58,7 @@ function Shop() {
                   <p className="card-text">{bike.description}</p>
                   <div className="d-flex justify-content-between align-items-center">
                     <p className="fs-5 mb-0"><strong>${bike.price}</strong></p>
-                    <Link to={`/bikes/${bike.id}`} className="btn btn-primary">
+                    <Link to={`/bikes/${bike._id}`} className="btn btn-primary">
                       View Details
                     </Link>
                   </div>

@@ -1,0 +1,77 @@
+/* frontend/src/components/layout/Navbar.css */
+
+.navbar {
+    padding: 0.75rem 1rem;
+    background-color: #212529 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .navbar-brand {
+    font-weight: 700;
+    font-size: 1.4rem;
+    padding: 0 0.5rem;
+  }
+  
+  .navbar-nav {
+    align-items: center;
+  }
+  
+  .main-nav .nav-item {
+    margin: 0 0.3rem;
+  }
+  
+  .nav-link {
+    padding: 0.5rem 0.8rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+  
+  .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  /* User dropdown styling */
+  .user-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background-color: #0d6efd;
+    border-radius: 50%;
+    margin-right: 8px;
+    font-weight: bold;
+    color: white;
+  }
+  
+  .dropdown-menu {
+    padding: 0.5rem 0;
+    margin-top: 0.5rem;
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  }
+  
+  .dropdown-item {
+    padding: 0.5rem 1.5rem;
+  }
+  
+  .dropdown-item:hover {
+    background-color: #f8f9fa;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 992px) {
+    .navbar-collapse {
+      padding-top: 0.5rem;
+    }
+    
+    .nav-item {
+      margin-bottom: 0.25rem;
+    }
+    
+    .auth-nav {
+      padding-top: 0.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      margin-top: 0.5rem;
+    }
+  }

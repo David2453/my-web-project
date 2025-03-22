@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import './Home.css'
 
 function Home() {
   // Sample featured bikes (in a real app, these would come from your backend)
@@ -33,88 +34,83 @@ function Home() {
   return (
     <div>
       {/* Hero Section */}
-      <div 
-        className="text-white py-5 mb-5"
-        style={{
-          backgroundImage: "url('../images/home_background.jpg')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          minHeight: "500px",
-          boxShadow: "0 0 100px rgba(0, 0, 0, 1)"
-        }}
-      >
-        <div className="container">
+      <div className="hero-section">
+        <div className="container hero-content">
           <div className="col-md-6">
-            <h1 className="display-4">Find Your Perfect Ride</h1>
-            <p className="lead">Rent or buy high-quality bikes for any terrain or occasion</p>
-            <Link to="/rentals" className="btn btn-primary btn-lg">Rent a Bike</Link>
-            <Link to="/shop" className="btn btn-outline-light btn-lg">Browse Shop</Link>
+            <h1 className="hero-title">Find Your Perfect Ride</h1>
+            <p className="hero-subtitle">Rent or buy high-quality bikes for any terrain or occasion</p>
+            <div className="hero-buttons">
+              <Link to="/rentals" className="btn btn-primary hero-btn">Rent a Bike</Link>
+              <Link to="/shop" className="btn btn-outline-light hero-btn">Browse Shop</Link>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Featured Bikes Section */}
-      <div className="container mb-5">
-        <h2 className="text-center mb-4">Featured Bikes</h2>
-        <div className="row">
-          {featuredBikes.map(bike => (
-            <div className="col-md-4 mb-4" key={bike.id}>
-              <div className="card h-100">
-                <img src={bike.image} className="card-img-top" alt={bike.name} />
-                <div className="card-body">
-                  <h5 className="card-title">{bike.name}</h5>
-                  <p className="card-text">{bike.type}</p>
-                  <div className="d-flex justify-content-between align-items-center">
-                    <div>
-                      <p className="mb-0"><strong>Buy:</strong> ${bike.price}</p>
-                      <p className="mb-0"><strong>Rent:</strong> ${bike.rentalPrice}/day</p>
+      <div className="featured-section">
+        <div className="container">
+          <h2 className="section-title">Featured Bikes</h2>
+          <div className="row">
+            {featuredBikes.map(bike => (
+              <div className="col-md-4 mb-4" key={bike.id}>
+                <div className="card bike-card h-100">
+                  <img src={bike.image} className="card-img-top bike-img" alt={bike.name} />
+                  <div className="card-body">
+                    <h5 className="card-title">{bike.name}</h5>
+                    <p className="card-text bike-type">{bike.type}</p>
+                    <div className="d-flex justify-content-between align-items-center">
+                      <div>
+                        <p className="mb-0 bike-price"><strong>Buy:</strong> ${bike.price}</p>
+                        <p className="mb-0 bike-price"><strong>Rent:</strong> ${bike.rentalPrice}/day</p>
+                      </div>
+                      <Link to={`/bikes/${bike.id}`} className="btn btn-sm btn-primary">View Details</Link>
                     </div>
-                    <Link to={`/bikes/${bike.id}`} className="btn btn-sm btn-primary">View Details</Link>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-        <div className="text-center mt-3">
-          <Link to="/bikes" className="btn btn-outline-primary">View All Bikes</Link>
+            ))}
+          </div>
+          <div className="text-center mt-3">
+            <Link to="/bikes" className="btn btn-outline-primary view-all-btn">View All Bikes</Link>
+          </div>
         </div>
       </div>
 
       {/* Services Section */}
-      <div className="bg-light py-5 mb-5">
+      <div className="services-section">
         <div className="container">
-          <h2 className="text-center mb-4">Our Services</h2>
+          <h2 className="section-title">Our Services</h2>
           <div className="row">
             <div className="col-md-4 mb-4">
-              <div className="card h-100 border-0 bg-light">
+              <div className="card service-card h-100 border-0 bg-light">
                 <div className="card-body text-center">
                   <div className="mb-3">
-                    <i className="bi bi-bicycle" style={{ fontSize: '2rem' }}></i>
+                    <i className="bi bi-bicycle service-icon"></i>
                   </div>
-                  <h5 className="card-title">Bike Rentals</h5>
+                  <h5 className="card-title service-title">Bike Rentals</h5>
                   <p className="card-text">Rent a bike for hours, days, or weeks. Perfect for tourists and casual riders.</p>
                 </div>
               </div>
             </div>
             <div className="col-md-4 mb-4">
-              <div className="card h-100 border-0 bg-light">
+              <div className="card service-card h-100 border-0 bg-light">
                 <div className="card-body text-center">
                   <div className="mb-3">
-                    <i className="bi bi-shop" style={{ fontSize: '2rem' }}></i>
+                    <i className="bi bi-shop service-icon"></i>
                   </div>
-                  <h5 className="card-title">Bike Sales</h5>
+                  <h5 className="card-title service-title">Bike Sales</h5>
                   <p className="card-text">Browse our collection of high-quality bikes for sale at competitive prices.</p>
                 </div>
               </div>
             </div>
             <div className="col-md-4 mb-4">
-              <div className="card h-100 border-0 bg-light">
+              <div className="card service-card h-100 border-0 bg-light">
                 <div className="card-body text-center">
                   <div className="mb-3">
-                    <i className="bi bi-tools" style={{ fontSize: '2rem' }}></i>
+                    <i className="bi bi-tools service-icon"></i>
                   </div>
-                  <h5 className="card-title">Maintenance</h5>
+                  <h5 className="card-title service-title">Maintenance</h5>
                   <p className="card-text">Professional bike maintenance and repair services to keep your rides smooth.</p>
                 </div>
               </div>
@@ -124,16 +120,18 @@ function Home() {
       </div>
 
       {/* Call to Action */}
-      <div className="container mb-5">
-        <div className="row">
-          <div className="col-12">
-            <div className="card bg-primary text-white">
-              <div className="card-body p-5 text-center">
-                <h3>Ready to start your adventure?</h3>
-                <p className="lead">Create an account to rent or purchase your perfect bike today.</p>
-                <div className="d-flex justify-content-center gap-3">
-                  <Link to="/register" className="btn btn-light btn-lg mt-3">Sign Up Now</Link>
-                  <Link to="/login" className="btn btn-light btn-lg mt-3">Log In</Link>
+      <div className="cta-section">
+        <div className="container">
+          <div className="row">
+            <div className="col-12">
+              <div className="card cta-card">
+                <div className="card-body p-5 text-center">
+                  <h3 className="cta-title">Ready to start your adventure?</h3>
+                  <p className="lead">Create an account to rent or purchase your perfect bike today.</p>
+                  <div className="d-flex justify-content-center gap-3">
+                    <Link to="/register" className="btn btn-light cta-btn mt-3">Sign Up Now</Link>
+                    <Link to="/login" className="btn btn-light cta-btn mt-3">Log In</Link>
+                  </div>
                 </div>
               </div>
             </div>
