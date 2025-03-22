@@ -1,0 +1,85 @@
+/* frontend/src/components/bikes/BikeFilters.css */
+
+.bike-filters {
+    background-color: rgba(255, 255, 255, 0.85);
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    border: none;
+    width: auto;
+    height: auto;
+  }
+  
+  .bike-filters .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 1rem 1.25rem;
+  }
+  
+  .bike-filters .card-header h5 {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #212529;
+  }
+  
+  .bike-filters .form-label {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #0b223a;
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Price range styling */
+  .price-value {
+    min-width: 60px;
+    text-align: right;
+    font-weight: 500;
+    color: #495057;
+  }
+
+  .form-range::-webkit-slider-thumb {
+    background: #4CAF50;
+  }
+  
+  .form-range::-moz-range-thumb {
+    background: #4CAF50;
+  }
+  
+  .form-range::-ms-thumb {
+    background: #4CAF50;
+  }
+  
+  /* Checkbox styling */
+  .form-check-input:checked {
+    background-color: #4CAF50;
+    border-color: #4CAF50;
+  }
+  
+  /* Filter sections */
+  .bike-type-filters, .gear-filters {
+    max-height: 150px;
+    overflow-y: auto;
+    padding-right: 10px;
+  }
+  
+  /* Reset filters button */
+  .btn-outline-secondary {
+    background-color: #8ae68d;
+    border-color: #ced4da;
+    color: #2f3133;
+    width: 160px;
+    height: 50px;
+    
+  }
+  
+  .btn-outline-secondary:hover {
+    background-color: #40a12c;
+    color: #495057;
+    border-color: #adb5bd;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .bike-filters .card-body {
+      padding: 1rem;
+    }
+  }

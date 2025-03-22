@@ -1,0 +1,93 @@
+/* frontend/src/components/pages/Bikes.css */
+
+.card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  .card-img-top {
+    transition: opacity 0.3s ease;
+  }
+  
+  .card:hover .card-img-top {
+    opacity: 0.9;
+  }
+  
+  .description {
+    min-height: 4.5rem;
+    margin-bottom: 1rem;
+  }
+
+
+  
+  /* Bike filter section */
+  .filter-section {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  }
+  
+  .filter-section h5 {
+    margin-bottom: 15px;
+    font-weight: 600;
+  }
+  
+  /* Improve the mode selector */
+  .mode-selector .btn {
+    background-color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+  }
+  
+  .mode-selector .btn-primary {
+    background-color: #258a28;
+    border-color: #4CAF50;
+  }
+  
+  .mode-selector .btn-primary:hover {
+    background-color: #0f4d12;
+    border-color: #388E3C;
+  }
+  
+  .mode-selector .btn-outline-primary {
+    border-color: #146816;
+    color: #146816;
+  }
+  
+  .mode-selector .btn-outline-primary:hover {
+    background-color: #e8f5e9;
+    color: #146816;
+  }
+  
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+  }
+  
+  .empty-state i {
+    font-size: 3rem;
+    color: #6c757d;
+    margin-bottom: 1rem;
+  }
+  
+  .empty-state h3 {
+    margin-bottom: 1rem;
+  }
+  
+  /* Make sure bike types have consistent display */
+  .badge {
+    font-weight: 500;
+    font-size: 0.85rem;
+    padding: 0.35em 0.65em;
+  }

@@ -130,9 +130,13 @@
   
   /* Services Section */
   .services-section {
-    background-color: #f8f9fa;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('../../../public/images/home_background.jpg');
+    background-size: cover;
+    background-position: center;
     padding: 80px 0;
+    color: #fff; /* White text for better visibility */
   }
+  
   
   .service-card {
     text-align: center;
