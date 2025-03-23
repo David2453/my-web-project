@@ -1,77 +1,146 @@
 /* frontend/src/components/layout/Navbar.css */
 
 .navbar {
-    padding: 0.75rem 1rem;
-    background-color: #212529 !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 0.75rem 1rem;
+  background-color: #212529 !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+  font-weight: 700;
+  font-size: 1.4rem;
+  padding: 0 0.5rem;
+}
+
+.navbar-nav {
+  align-items: center;
+}
+
+.main-nav .nav-item {
+  margin: 0 0.3rem;
+}
+
+.nav-link {
+  padding: 0.5rem 0.8rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* User dropdown styling */
+.user-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background-color: #0d6efd;
+  border-radius: 50%;
+  margin-right: 8px;
+  font-weight: bold;
+  color: white;
+}
+
+.dropdown-menu {
+  padding: 0.5rem 0;
+  margin-top: 0.5rem;
+  border: none;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.dropdown-item {
+  padding: 0.5rem 1.5rem;
+}
+
+.dropdown-item:hover {
+  background-color: #f8f9fa;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .navbar-collapse {
+    padding-top: 0.5rem;
   }
   
-  .navbar-brand {
-    font-weight: 700;
-    font-size: 1.4rem;
-    padding: 0 0.5rem;
+  .nav-item {
+    margin-bottom: 0.25rem;
   }
   
-  .navbar-nav {
-    align-items: center;
-  }
-  
-  .main-nav .nav-item {
-    margin: 0 0.3rem;
-  }
-  
-  .nav-link {
-    padding: 0.5rem 0.8rem;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-  }
-  
-  .nav-link:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-  }
-  
-  /* User dropdown styling */
-  .user-avatar {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    background-color: #0d6efd;
-    border-radius: 50%;
-    margin-right: 8px;
-    font-weight: bold;
-    color: white;
-  }
-  
-  .dropdown-menu {
-    padding: 0.5rem 0;
+  .auth-nav {
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
     margin-top: 0.5rem;
-    border: none;
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   }
-  
-  .dropdown-item {
-    padding: 0.5rem 1.5rem;
-  }
-  
-  .dropdown-item:hover {
-    background-color: #f8f9fa;
-  }
-  
-  /* Responsive adjustments */
-  @media (max-width: 992px) {
-    .navbar-collapse {
-      padding-top: 0.5rem;
-    }
-    
-    .nav-item {
-      margin-bottom: 0.25rem;
-    }
-    
-    .auth-nav {
-      padding-top: 0.5rem;
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-      margin-top: 0.5rem;
-    }
-  }
+}
+
+/* Toast notification styling */
+.toast {
+  background-color: white;
+  border-radius: 8px;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: slideIn 0.3s ease-out;
+}
+
+.toast-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  background-color: #f8f9fa;
+  color: #4CAF50;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.toast-body {
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  align-items: center;
+}
+
+/* Modal styling for logout confirmation */
+.modal-content {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 1.25rem 1.5rem;
+}
+
+.modal-footer {
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 1.25rem 1.5rem;
+}
+
+.modal-title {
+  font-weight: 600;
+}
+
+/* Animation for toast */
+@keyframes slideIn {
+from {
+  transform: translateY(30px);
+  opacity: 0;
+}
+to {
+  transform: translateY(0);
+  opacity: 1;
+}
+}
+
+/* Logout button styling */
+.dropdown-item.logout-btn {
+color: #dc3545;
+}
+
+.dropdown-item.logout-btn:hover {
+background-color: #ffebee;
+}
+
+.dropdown-item.logout-btn i {
+margin-right: 5px;
+}
