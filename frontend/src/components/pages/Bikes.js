@@ -2,10 +2,33 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import ModeSelector from '../bikes/ModeSelector';
-import LocationSelector from '../bikes/LocationSelector';
-import BikeFilters from '../bikes/BikeFilters';
-import './Bikes.css';
+import ModeSelectorMUI from '../bikes/ModeSelectorMUI';
+import LocationSelectorMUI from '../bikes/LocationSelectorMUI';
+import BikeFiltersMUI from '../bikes/BikeFiltersMUI';
+
+// Material UI imports
+import {
+  Container,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  CardMedia,
+  Button,
+  Box,
+  Chip,
+  CircularProgress,
+  Alert,
+  Paper,
+  Stack,
+  IconButton
+} from '@mui/material';
+import {
+  DirectionsBike as BikeIcon,
+  Warning as WarningIcon,
+  ViewModule as GridViewIcon,
+  ViewList as ListViewIcon
+} from '@mui/icons-material';
 
 function Bikes() {
   const [mode, setMode] = useState('purchase'); // 'purchase' or 'rental'
@@ -16,6 +39,7 @@ function Bikes() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeFilters, setActiveFilters] = useState(null);
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
 
   // Fetch locations for rental mode - using useCallback to prevent unnecessary re-renders
   const fetchLocations = useCallback(async () => {
@@ -121,151 +145,201 @@ function Bikes() {
   }, [bikes, mode]);
 
   return (
-    <div className="container py-5">
-      <h1 className="mb-4 text-center">Our Bicycles</h1>
-      <p className="lead text-center mb-5">
-        Browse our selection of high-quality bikes available for purchase or rental
-      </p>
+    <Container maxWidth="lg" sx={{ py: 5 }}>
+      <Box textAlign="center" mb={5}>
+        <Typography variant="h3" component="h1" gutterBottom fontWeight="bold">
+          Our Bicycles
+        </Typography>
+        <Typography variant="h6" color="text.secondary">
+          Browse our selection of high-quality bikes available for purchase or rental
+        </Typography>
+      </Box>
 
-      <div className="row">
+      <Grid container spacing={3}>
         {/* Filters Panel (Left Side) */}
-        <div className="col-lg-3">
+        <Grid item xs={12} md={3}>
           {/* Mode Selector */}
-          <div className="mb-4">
-            <ModeSelector mode={mode} setMode={setMode} />
-          </div>
+          <ModeSelectorMUI mode={mode} setMode={setMode} />
 
           {/* Location Selector (only show in rental mode) */}
           {mode === 'rental' && (
-            <div className="mb-4">
-              <LocationSelector 
-                selectedLocation={selectedLocation}
-                setSelectedLocation={setSelectedLocation}
-                locations={locations}
-              />
-            </div>
+            <LocationSelectorMUI 
+              selectedLocation={selectedLocation}
+              setSelectedLocation={setSelectedLocation}
+              locations={locations}
+            />
           )}
 
           {/* Bike Filters */}
           {!loading && bikes.length > 0 && (
-            <BikeFilters onFilterChange={handleFilterChange} bikeData={bikes} />
+            <BikeFiltersMUI onFilterChange={handleFilterChange} bikeData={bikes} />
           )}
-        </div>
+        </Grid>
 
         {/* Bikes Display (Right Side) */}
-        <div className="col-lg-9">
+        <Grid item xs={12} md={9}>
           {/* Error Alert */}
           {error && (
-            <div className="alert alert-danger" role="alert">
+            <Alert severity="error" sx={{ mb: 3 }} variant="filled">
               {error}
-            </div>
+            </Alert>
           )}
 
           {/* Loading Spinner */}
           {loading ? (
-            <div className="text-center py-5">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Loading...</span>
-              </div>
-            </div>
+            <Box display="flex" justifyContent="center" alignItems="center" height="300px">
+              <CircularProgress size={60} thickness={4} />
+            </Box>
           ) : bikes.length === 0 ? (
-            <div className="alert alert-info text-center">
+            <Alert severity="info" sx={{ mb: 3 }} variant="filled">
               {mode === 'purchase' 
                 ? 'No bikes available for purchase at this time.' 
                 : 'No bikes available for rental at this location.'}
-            </div>
+            </Alert>
           ) : filteredBikes.length === 0 ? (
-            <div className="alert alert-warning text-center">
-              <i className="bi bi-emoji-frown fs-4 d-block mb-3"></i>
-              <h5>No bikes match your filters</h5>
-              <p>Try adjusting your filter criteria to see more bikes.</p>
-            </div>
+            <Paper
+              elevation={3}
+              sx={{
+                p: 4,
+                textAlign: 'center',
+                borderRadius: 2,
+                backgroundColor: 'rgba(255, 152, 0, 0.08)',
+                border: '1px solid rgba(255, 152, 0, 0.2)'
+              }}
+            >
+              <WarningIcon sx={{ fontSize: 60, color: 'warning.main', mb: 2 }} />
+              <Typography variant="h5" gutterBottom fontWeight="medium">
+                No bikes match your filters
+              </Typography>
+              <Typography variant="body1">
+                Try adjusting your filter criteria to see more bikes.
+              </Typography>
+            </Paper>
           ) : (
-            <div>
-              {/* Results count */}
-              <div className="d-flex justify-content-between align-items-center mb-4">
-                <p className="mb-0">
-                  <span className="fw-medium">{filteredBikes.length}</span> {filteredBikes.length === 1 ? 'bike' : 'bikes'} found
+            <Box>
+              {/* Results count and view toggle */}
+              <Paper elevation={2} sx={{ p: 2, mb: 3, borderRadius: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="body1">
+                  <Box component="span" fontWeight="medium">{filteredBikes.length}</Box> {filteredBikes.length === 1 ? 'bike' : 'bikes'} found
                   {activeFilters && (
-                    <span className="text-muted ms-2">
+                    <Typography component="span" color="text.secondary" variant="body2" sx={{ ml: 1 }}>
                       (Filtered from {bikes.length})
-                    </span>
+                    </Typography>
                   )}
-                </p>
-                <div className="btn-group">
-                  <button className="btn btn-sm btn-outline-primary active">
-                    <i className="bi bi-grid-3x3-gap"></i>
-                  </button>
-                  <button className="btn btn-sm btn-outline-primary">
-                    <i className="bi bi-list"></i>
-                  </button>
-                </div>
-              </div>
+                </Typography>
+                <Stack direction="row" spacing={1}>
+                  <IconButton 
+                    size="small" 
+                    color={viewMode === 'grid' ? 'primary' : 'default'}
+                    onClick={() => setViewMode('grid')}
+                  >
+                    <GridViewIcon />
+                  </IconButton>
+                  <IconButton 
+                    size="small" 
+                    color={viewMode === 'list' ? 'primary' : 'default'}
+                    onClick={() => setViewMode('list')}
+                  >
+                    <ListViewIcon />
+                  </IconButton>
+                </Stack>
+              </Paper>
 
               {/* Bikes grid */}
-              <div className="row">
+              <Grid container spacing={3}>
                 {filteredBikes.map(bike => (
-                  <div className="col-md-6 col-lg-4 mb-4" key={bike._id}>
-                    <div className="card h-100 shadow-sm">
-                      <div className="position-relative">
-                        <img 
-                          src={bike.image} 
-                          className="card-img-top" 
-                          alt={bike.name}
-                          style={{ height: "240px", objectFit: "cover" }}
-                        />
-                        <span className="position-absolute top-0 start-0 badge rounded-pill bg-dark m-2">
-                          {bike.type}
-                        </span>
-                      </div>
-                      <div className="card-body">
-                        <h5 className="card-title">{bike.name}</h5>
-                        <p className="card-text description">
-                          {bike.description.length > 100 
-                            ? `${bike.description.substring(0, 100)}...` 
-                            : bike.description}
-                        </p>
-                        
-                        {/* Bike features (focusing on gears) */}
-                        {bike.features && bike.features.length > 0 && (
-                          <div className="mb-3">
-                            <div className="bike-features">
+                  <Grid item xs={12} sm={viewMode === 'grid' ? 6 : 12} md={viewMode === 'grid' ? 4 : 12} key={bike._id}>
+                    <Card 
+                      elevation={3} 
+                      sx={{ 
+                        height: '100%', 
+                        display: viewMode === 'list' ? 'flex' : 'block',
+                        transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                        '&:hover': {
+                          transform: 'translateY(-8px)',
+                          boxShadow: 8
+                        }
+                      }}
+                    >
+                      <CardMedia 
+                        component="img" 
+                        image={bike.image} 
+                        alt={bike.name}
+                        sx={{ 
+                          height: viewMode === 'list' ? 200 : 240,
+                          width: viewMode === 'list' ? 200 : '100%',
+                          objectFit: "cover"
+                        }}
+                      />
+                      <Box sx={{ position: 'relative' }}>
+                        <CardContent sx={{ pb: 1 }}>
+                          <Box position="absolute" top={viewMode === 'list' ? 0 : -36} left={viewMode === 'list' ? -64 : 8}>
+                            <Chip 
+                              label={bike.type} 
+                              size="small" 
+                              color="primary" 
+                              variant="filled"
+                              sx={{ fontWeight: 'medium' }}
+                            />
+                          </Box>
+                          <Typography variant="h6" component="h2" gutterBottom>
+                            {bike.name}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, height: viewMode === 'grid' ? 60 : 'auto', overflow: 'hidden' }}>
+                            {bike.description.length > (viewMode === 'grid' ? 100 : 200)
+                              ? `${bike.description.substring(0, viewMode === 'grid' ? 100 : 200)}...` 
+                              : bike.description}
+                          </Typography>
+                          
+                          {/* Bike features (focusing on gears) */}
+                          {bike.features && bike.features.length > 0 && (
+                            <Box mb={2} display="flex" flexWrap="wrap" gap={0.8}>
                               {bike.features
                                 .filter(feature => /speed|gear/i.test(feature))
                                 .map((feature, index) => (
-                                  <span key={index} className="badge bg-light text-dark me-2 mb-1">
-                                    {feature}
-                                  </span>
+                                  <Chip 
+                                    key={index} 
+                                    label={feature} 
+                                    size="small" 
+                                    variant="outlined"
+                                    sx={{ fontSize: '0.75rem' }}
+                                  />
                                 ))
                               }
-                            </div>
-                          </div>
-                        )}
-                        
-                        <div className="d-flex justify-content-between align-items-center" >
-                          {mode === 'purchase' ? (
-                            <p className="fs-5 mb-0"><strong>${bike.price}</strong></p>
-                          ) : (
-                            <p className="fs-5 mb-0"><strong>${bike.rentalPrice}</strong> / day</p>
+                            </Box>
                           )}
                           
-                        </div>
-                        <Link 
-                            to={`/bikes/${bike._id}${mode === 'rental' ? `?mode=rental&location=${selectedLocation}` : ''}`} 
-                            className="btn btn-primary"
-                          >
-                            View Details
-                          </Link>
-                      </div>
-                    </div>
-                  </div>
+                          <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
+                            {mode === 'purchase' ? (
+                              <Typography variant="h6" color="primary.main" fontWeight="bold">${bike.price}</Typography>
+                            ) : (
+                              <Typography variant="h6" color="primary.main" fontWeight="bold">
+                                ${bike.rentalPrice}<Typography component="span" variant="body2">/day</Typography>
+                              </Typography>
+                            )}
+                            
+                            <Button 
+                              variant="contained" 
+                              color="primary"
+                              component={Link}
+                              to={`/bikes/${bike._id}${mode === 'rental' ? `?mode=rental&location=${selectedLocation}` : ''}`}
+                              startIcon={<BikeIcon />}
+                              size="small"
+                            >
+                              View Details
+                            </Button>
+                          </Box>
+                        </CardContent>
+                      </Box>
+                    </Card>
+                  </Grid>
                 ))}
-              </div>
-            </div>
+              </Grid>
+            </Box>
           )}
-        </div>
-      </div>
-    </div>
+        </Grid>
+      </Grid>
+    </Container>
   );
 }
 
