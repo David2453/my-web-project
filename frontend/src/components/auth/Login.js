@@ -2,6 +2,27 @@ import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
+import {
+  Container,
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Paper,
+  Grid,
+  Alert,
+  CircularProgress,
+  InputAdornment,
+  IconButton,
+  Divider
+} from '@mui/material';
+import {
+  Email as EmailIcon,
+  Lock as LockIcon,
+  Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon,
+  Login as LoginIcon
+} from '@mui/icons-material';
 
 function Login() {
   const [formData, setFormData] = useState({
@@ -11,13 +32,22 @@ function Login() {
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { setAuthState } = useContext(AuthContext);
 
   const { email, password } = formData;
 
+  const handleClickShowPassword = () => {
+    setShowPassword(!showPassword);
+  };
+
   const onChange = e => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    // Clear error when user types
+    if (errors[e.target.name]) {
+      setErrors(prev => ({ ...prev, [e.target.name]: null }));
+    }
   };
 
   const validateForm = () => {
@@ -90,72 +120,151 @@ function Login() {
   };
 
   return (
-    <div className="container py-5">
-      <div className="row justify-content-center">
-        <div className="col-md-6">
-          <div className="card shadow">
-            <div className="card-body p-5">
-              <h2 className="text-center mb-4">Sign In</h2>
-              
-              {errors.login && (
-                <div className="alert alert-danger" role="alert">
-                  {errors.login}
-                </div>
-              )}
-              
-              <form onSubmit={onSubmit}>
-                <div className="mb-3">
-                  <label htmlFor="email" className="form-label">Email Address</label>
-                  <input
-                    type="email"
-                    className={`form-control ${errors.email ? 'is-invalid' : ''}`}
-                    id="email"
-                    name="email"
-                    value={email}
-                    onChange={onChange}
-                  />
-                  {errors.email && <div className="invalid-feedback">{errors.email}</div>}
-                </div>
-
-                <div className="mb-4">
-                  <label htmlFor="password" className="form-label">Password</label>
-                  <input
-                    type="password"
-                    className={`form-control ${errors.password ? 'is-invalid' : ''}`}
-                    id="password"
-                    name="password"
-                    value={password}
-                    onChange={onChange}
-                  />
-                  {errors.password && <div className="invalid-feedback">{errors.password}</div>}
-                </div>
-
-                <div className="d-grid">
-                  <button 
-                    type="submit" 
-                    className="btn btn-primary py-2"
-                    disabled={loading}
+    <Container maxWidth="sm" sx={{ py: 8 }}>
+      <Paper 
+        elevation={3} 
+        sx={{ 
+          p: 4, 
+          borderRadius: 2,
+          boxShadow: '0 8px 40px rgba(0, 0, 0, 0.12)',
+          position: 'relative',
+          overflow: 'hidden'
+        }}
+      >
+        {/* Green accent border at top */}
+        <Box 
+          sx={{ 
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 5,
+            bgcolor: 'primary.main',
+            background: 'linear-gradient(to right, #4CAF50, #8BC34A)'
+          }} 
+        />
+        
+        <Box sx={{ textAlign: 'center', mb: 3 }}>
+          <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
+            Sign In
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Welcome back! Please sign in to continue.
+          </Typography>
+        </Box>
+        
+        {errors.login && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {errors.login}
+          </Alert>
+        )}
+        
+        <Box component="form" onSubmit={onSubmit} noValidate>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="email"
+            label="Email Address"
+            name="email"
+            autoComplete="email"
+            autoFocus
+            value={email}
+            onChange={onChange}
+            error={!!errors.email}
+            helperText={errors.email}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <EmailIcon color="action" />
+                </InputAdornment>
+              ),
+            }}
+          />
+          
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            name="password"
+            label="Password"
+            type={showPassword ? 'text' : 'password'}
+            id="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={onChange}
+            error={!!errors.password}
+            helperText={errors.password}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <LockIcon color="action" />
+                </InputAdornment>
+              ),
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label="toggle password visibility"
+                    onClick={handleClickShowPassword}
+                    edge="end"
                   >
-                    {loading ? (
-                      <span>
-                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        Signing in...
-                      </span>
-                    ) : (
-                      'Sign In'
-                    )}
-                  </button>
-                </div>
-              </form>
-
-              <div className="text-center mt-4">
-                Don't have an account? <Link to="/register">Create one</Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+                    {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+          
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            color="primary"
+            size="large"
+            sx={{ mt: 3, mb: 2, py: 1.2 }}
+            disabled={loading}
+            startIcon={loading ? null : <LoginIcon />}
+          >
+            {loading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              'Sign In'
+            )}
+          </Button>
+          
+          <Divider sx={{ my: 3 }}>
+            <Typography variant="body2" color="text.secondary">
+              OR
+            </Typography>
+          </Divider>
+          
+          <Grid container justifyContent="center">
+            <Grid item>
+              <Typography variant="body2">
+                Don't have an account?{' '}
+                <Link 
+                  to="/register"
+                  style={{ 
+                    color: '#4CAF50',
+                    textDecoration: 'none',
+                    fontWeight: 500,
+                    '&:hover': { textDecoration: 'underline' }
+                  }}
+                >
+                  Create one
+                </Link>
+              </Typography>
+            </Grid>
+          </Grid>
+        </Box>
+      </Paper>
+      
+      <Box sx={{ textAlign: 'center', mt: 3 }}>
+        <Typography variant="body2" color="text.secondary">
+          © {new Date().getFullYear()} Bike Rent & Shop. All rights reserved.
+        </Typography>
+      </Box>
+    </Container>
   );
 }
 

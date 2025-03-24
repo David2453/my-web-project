@@ -139,7 +139,7 @@ const seedData = async () => {
         description: 'Versatile hybrid bike that combines features of road and mountain bikes.',
         price: 749.99,
         rentalPrice: 30.99,
-        image: 'https://cdn.shopify.com/s/files/1/0799/9645/products/EB1P9394_1200x.jpg?v=1695330380',
+        image: 'https://mediacdn.libertatea.ro/unsafe/800x600/smart/filters:format(webp):contrast(8):quality(75)/https://static4.libertatea.ro/wp-content/uploads/2020/09/rasa-de-caine-pug.jpg',
         features: ['21-speed Shimano gearing', 'Front suspension fork', 'Comfortable ergonomic grips'],
         purchaseStock: 12,
         rentalInventory: [
