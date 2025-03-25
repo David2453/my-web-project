@@ -137,6 +137,44 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Add this to backend/routes/bikes.js
+// @route   GET api/bikes/search
+// @desc    Search bikes by name or type
+// @access  Public
+router.get('/search', async (req, res) => {
+  try {
+    const { query, type, minPrice, maxPrice } = req.query;
+    
+    // Build search criteria
+    const searchCriteria = {};
+    
+    if (query) {
+      searchCriteria.$or = [
+        { name: { $regex: query, $options: 'i' } },
+        { description: { $regex: query, $options: 'i' } }
+      ];
+    }
+    
+    if (type) {
+      searchCriteria.type = { $regex: type, $options: 'i' };
+    }
+    
+    // Price range filter
+    if (minPrice || maxPrice) {
+      searchCriteria.price = {};
+      if (minPrice) searchCriteria.price.$gte = Number(minPrice);
+      if (maxPrice) searchCriteria.price.$lte = Number(maxPrice);
+    }
+    
+    const bikes = await Bike.find(searchCriteria);
+    
+    res.json(bikes);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
 // @route   POST api/bikes
 // @desc    Create a new bike
 // @access  Private (Admin only)

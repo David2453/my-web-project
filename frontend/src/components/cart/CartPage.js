@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { CartContext } from '../context/CartContext';
 import {
   Box,
   Container,
@@ -48,109 +49,92 @@ import {
   ShoppingBag as ShoppingBagIcon
 } from '@mui/icons-material';
 
-// Mock data for cart items - in a real app, this would come from your state management or context
-const mockCartItems = [
-  {
-    id: '1',
-    name: 'Mountain Explorer',
-    type: 'Mountain Bike',
-    price: 899.99,
-    image: 'https://www.paulscycles.co.uk/images/altitude-c70-red-carbon.jpg?width=1998&height=1998&quality=85&mode=pad&format=webp&bgcolor=ffffff',
-    quantity: 1
-  },
-  {
-    id: '3',
-    name: 'Road Master',
-    type: 'Road Bike',
-    price: 1199.99,
-    image: 'https://www.certini.co.uk/images/products/s/sp/specialized-allez-e5-disc-road-b-2.jpg?width=1998&height=1998&quality=85&mode=pad&format=webp&bgcolor=ffffff',
-    quantity: 2
-  }
-];
-
-// For rentals
-const mockRentalItems = [
-  {
-    id: '2',
-    name: 'City Cruiser',
-    type: 'Urban Bike',
-    price: 25.99,
-    image: 'https://images.ctfassets.net/ogr4ifihl2yh/3gvlDBzj1UgLVNH2vAhFEF/5a1585c9a1463d431d7cce957ba7c984/Profile_-_Around_the_Block_Women-s_26__Single_Speed_-_Mint_Green_-_630042_NEW.png?w=1000&q=85',
-    location: 'New York City Store',
-    startDate: '2024-03-28',
-    endDate: '2024-03-30',
-    days: 3
-  }
-];
-
 function CartPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const { authState } = useContext(AuthContext);
+  const { cartItems, loading: cartLoading, error: cartError, updateCartItem, removeFromCart, clearCart, calculateTotals } = useContext(CartContext);
   
-  // State for cart items
-  const [cartItems, setCartItems] = useState(mockCartItems);
-  const [rentalItems, setRentalItems] = useState(mockRentalItems);
+  // State for checkout
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [itemToRemove, setItemToRemove] = useState(null);
-  const [removeType, setRemoveType] = useState('');
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
+
+  // Extract purchase and rental items from cart
+  const purchaseItems = cartItems.filter(item => item.itemType === 'purchase');
+  const rentalItems = cartItems.filter(item => item.itemType === 'rental');
   
   // Check if cart is empty
-  const isCartEmpty = cartItems.length === 0 && rentalItems.length === 0;
+  const isCartEmpty = cartItems.length === 0;
   
-  // Calculate totals
-  const subtotal = cartItems.reduce(
-    (total, item) => total + item.price * item.quantity, 
-    0
-  );
-  
-  const rentalTotal = rentalItems.reduce(
-    (total, item) => total + item.price * item.days, 
-    0
-  );
-  
-  // Fixed shipping and taxes for demonstration
-  const shipping = cartItems.length > 0 ? 15.99 : 0;
-  const tax = (subtotal + rentalTotal) * 0.08; // 8% tax
-  const total = subtotal + rentalTotal + shipping + tax;
+  // Get totals from the context
+  const { subtotal, rentalTotal, shipping, tax, total } = calculateTotals();
   
   // Checkout steps
   const steps = ['Cart', 'Shipping', 'Payment', 'Confirmation'];
   
   // Handle quantity change
-  const handleQuantityChange = (id, change) => {
-    setCartItems(prevItems => 
-      prevItems.map(item => 
-        item.id === id 
-          ? { ...item, quantity: Math.max(1, item.quantity + change) } 
-          : item
-      )
-    );
+  const handleQuantityChange = async (id, change, currentQuantity) => {
+    const newQuantity = Math.max(1, currentQuantity + change);
+    try {
+      await updateCartItem(id, newQuantity);
+    } catch (err) {
+      console.error('Error updating quantity:', err);
+      setSnackbar({
+        open: true,
+        message: 'Failed to update quantity',
+        severity: 'error'
+      });
+    }
+  };
+  
+  // Handle direct quantity input
+  const handleQuantityInput = async (id, value) => {
+    // Convert to number, ensure minimum of 1
+    const quantity = Math.max(1, parseInt(value) || 1);
+    try {
+      await updateCartItem(id, quantity);
+    } catch (err) {
+      console.error('Error updating quantity:', err);
+      setSnackbar({
+        open: true,
+        message: 'Failed to update quantity',
+        severity: 'error'
+      });
+    }
   };
   
   // Handle item removal confirmation dialog
-  const handleRemoveItemClick = (item, type) => {
+  const handleRemoveItemClick = (item) => {
     setItemToRemove(item);
-    setRemoveType(type);
     setShowConfirmDialog(true);
   };
   
   // Handle actual item removal
-  const confirmRemoveItem = () => {
-    if (removeType === 'purchase') {
-      setCartItems(prevItems => prevItems.filter(item => item.id !== itemToRemove.id));
-    } else {
-      setRentalItems(prevItems => prevItems.filter(item => item.id !== itemToRemove.id));
+  const confirmRemoveItem = async () => {
+    try {
+      await removeFromCart(itemToRemove.id);
+      setShowConfirmDialog(false);
+      setSnackbar({
+        open: true,
+        message: 'Item removed from cart',
+        severity: 'success'
+      });
+    } catch (err) {
+      console.error('Error removing item:', err);
+      setSnackbar({
+        open: true,
+        message: 'Failed to remove item',
+        severity: 'error'
+      });
     }
-    
-    setShowConfirmDialog(false);
-    setSnackbarMessage('Item removed from cart');
-    setSnackbarOpen(true);
   };
   
   // Handle navigation between checkout steps
@@ -165,8 +149,7 @@ function CartPage() {
       
       // If we've completed the checkout, clear the cart
       if (activeStep === steps.length - 2) {
-        setCartItems([]);
-        setRentalItems([]);
+        clearCart();
       }
     }, 1000);
   };
@@ -182,7 +165,15 @@ function CartPage() {
   
   // Close snackbar
   const handleCloseSnackbar = () => {
-    setSnackbarOpen(false);
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
+
+  // Calculate number of days for rental item
+  const calculateDays = (startDate, endDate) => {
+    if (!startDate || !endDate) return 1;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    return Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
   };
   
   return (
@@ -199,24 +190,40 @@ function CartPage() {
         Your Cart
       </Typography>
       
+      {/* Loading state */}
+      {cartLoading && (
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+          <CircularProgress size={60} />
+        </Box>
+      )}
+      
+      {/* Error state */}
+      {cartError && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {cartError}
+        </Alert>
+      )}
+      
       {/* Checkout Stepper */}
-      <Stepper 
-        activeStep={activeStep} 
-        alternativeLabel
-        sx={{ 
-          mb: 4,
-          display: isCartEmpty && activeStep === 0 ? 'none' : 'flex'
-        }}
-      >
-        {steps.map((label) => (
-          <Step key={label}>
-            <StepLabel>{label}</StepLabel>
-          </Step>
-        ))}
-      </Stepper>
+      {!cartLoading && (
+        <Stepper 
+          activeStep={activeStep} 
+          alternativeLabel
+          sx={{ 
+            mb: 4,
+            display: isCartEmpty && activeStep === 0 ? 'none' : 'flex'
+          }}
+        >
+          {steps.map((label) => (
+            <Step key={label}>
+              <StepLabel>{label}</StepLabel>
+            </Step>
+          ))}
+        </Stepper>
+      )}
       
       {/* Cart is empty */}
-      {isCartEmpty && activeStep === 0 ? (
+      {!cartLoading && isCartEmpty && activeStep === 0 ? (
         <Paper 
           elevation={3} 
           sx={{ 
@@ -255,12 +262,12 @@ function CartPage() {
       ) : (
         <>
           {/* Cart content step */}
-          {activeStep === 0 && (
+          {!cartLoading && activeStep === 0 && (
             <Grid container spacing={4}>
               {/* Cart Items */}
               <Grid item xs={12} md={8}>
                 {/* Purchase Items */}
-                {cartItems.length > 0 && (
+                {purchaseItems.length > 0 && (
                   <Paper elevation={3} sx={{ mb: 3, p: 3, borderRadius: 2 }}>
                     <Typography variant="h6" gutterBottom>
                       Items for Purchase
@@ -268,7 +275,7 @@ function CartPage() {
                     <Divider sx={{ mb: 2 }} />
                     
                     <List disablePadding>
-                      {cartItems.map((item) => (
+                      {purchaseItems.map((item) => (
                         <React.Fragment key={item.id}>
                           <ListItem 
                             alignItems="flex-start" 
@@ -311,7 +318,7 @@ function CartPage() {
                             >
                               <IconButton 
                                 size="small" 
-                                onClick={() => handleQuantityChange(item.id, -1)}
+                                onClick={() => handleQuantityChange(item.id, -1, item.quantity)}
                                 disabled={item.quantity <= 1}
                               >
                                 <RemoveIcon fontSize="small" />
@@ -321,6 +328,7 @@ function CartPage() {
                                 value={item.quantity}
                                 size="small"
                                 variant="outlined"
+                                onChange={(e) => handleQuantityInput(item.id, e.target.value)}
                                 inputProps={{ 
                                   min: 1, 
                                   style: { textAlign: 'center' } 
@@ -330,7 +338,7 @@ function CartPage() {
                               
                               <IconButton 
                                 size="small" 
-                                onClick={() => handleQuantityChange(item.id, 1)}
+                                onClick={() => handleQuantityChange(item.id, 1, item.quantity)}
                               >
                                 <AddIcon fontSize="small" />
                               </IconButton>
@@ -338,7 +346,7 @@ function CartPage() {
                               <IconButton 
                                 color="error" 
                                 sx={{ ml: 1 }}
-                                onClick={() => handleRemoveItemClick(item, 'purchase')}
+                                onClick={() => handleRemoveItemClick(item)}
                               >
                                 <DeleteIcon />
                               </IconButton>
@@ -390,13 +398,13 @@ function CartPage() {
                                 {item.type}
                               </Typography>
                               <Typography variant="body2" fontWeight="medium">
-                                Location: {item.location}
+                                Location: {item.location?.name || 'N/A'}
                               </Typography>
                               <Typography variant="body2">
-                                {new Date(item.startDate).toLocaleDateString()} - {new Date(item.endDate).toLocaleDateString()} ({item.days} days)
+                                {new Date(item.startDate).toLocaleDateString()} - {new Date(item.endDate).toLocaleDateString()} ({calculateDays(item.startDate, item.endDate)} days)
                               </Typography>
                               <Typography variant="body2" fontWeight="bold" color="primary.main" sx={{ mt: 1 }}>
-                                ${item.price.toFixed(2)}/day · ${(item.price * item.days).toFixed(2)} total
+                                ${item.rentalPrice.toFixed(2)}/day · ${(item.rentalPrice * calculateDays(item.startDate, item.endDate)).toFixed(2)} total
                               </Typography>
                             </Box>
                             
@@ -410,7 +418,7 @@ function CartPage() {
                             >
                               <IconButton 
                                 color="error" 
-                                onClick={() => handleRemoveItemClick(item, 'rental')}
+                                onClick={() => handleRemoveItemClick(item)}
                               >
                                 <DeleteIcon />
                               </IconButton>
@@ -427,7 +435,7 @@ function CartPage() {
                   variant="outlined"
                   startIcon={<ShoppingCartIcon />}
                   onClick={handleContinueShopping}
-                  sx={{ mt: 2 }}
+                  sx={{ mt: 4, backgroundColor:"white" }}
                 >
                   Continue Shopping
                 </Button>
@@ -489,7 +497,7 @@ function CartPage() {
                     fullWidth
                     onClick={handleNext}
                     endIcon={loading ? <CircularProgress size={20} color="inherit" /> : <ArrowForwardIcon />}
-                    disabled={loading}
+                    disabled={loading || isCartEmpty}
                   >
                     {loading ? 'Processing...' : 'Proceed to Checkout'}
                   </Button>
@@ -726,11 +734,18 @@ function CartPage() {
       
       {/* Notification snackbar */}
       <Snackbar
-        open={snackbarOpen}
+        open={snackbar.open}
         autoHideDuration={3000}
         onClose={handleCloseSnackbar}
-        message={snackbarMessage}
-      />
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity}
+          variant="filled"
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }

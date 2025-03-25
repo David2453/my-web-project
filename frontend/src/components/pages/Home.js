@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import './Home.css'
+import ResponsiveVideo from './ResponsiveVideo';
 
 function Home() {
   // Sample featured bikes (in a real app, these would come from your backend)
@@ -35,16 +36,8 @@ function Home() {
     <div>
       {/* Hero Section */}
       <div className="hero-section">
-        <div className="container hero-content">
-          <div className="col-md-6">
-            <h1 className="hero-title">Find Your Perfect Ride</h1>
-            <p className="hero-subtitle">Rent or buy high-quality bikes for any terrain or occasion</p>
-            <div className="hero-buttons">
-              <Link to="/rentals" className="btn btn-primary hero-btn">Rent a Bike</Link>
-              <Link to="/shop" className="btn btn-outline-light hero-btn">Browse Shop</Link>
-            </div>
-          </div>
-        </div>
+        <ResponsiveVideo/>
+        
       </div>
 
       {/* Featured Bikes Section */}

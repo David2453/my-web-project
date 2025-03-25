@@ -1,4 +1,4 @@
-// backend/models/Bike.js
+// Update backend/models/Bikes.js to include these additional fields
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
@@ -45,6 +45,15 @@ const BikeSchema = new Schema({
       }
     }
   ],
+  // Add these new fields
+  averageRating: {
+    type: Number,
+    default: 0
+  },
+  reviewCount: {
+    type: Number,
+    default: 0
+  },
   createdAt: {
     type: Date,
     default: Date.now

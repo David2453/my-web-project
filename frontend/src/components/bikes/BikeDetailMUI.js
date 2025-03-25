@@ -1,7 +1,10 @@
 // frontend/src/components/bikes/BikeDetailMUI.js
-import React, { useState, useEffect } from 'react';
-import { useParams, useSearchParams, Link } from 'react-router-dom';
+import React, { useState, useEffect, useContext } from 'react';
+import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { AuthContext } from '../context/AuthContext';
+import { CartContext } from '../context/CartContext';
+import { FavoritesContext } from '../context/FavoritesContext';
 import {
   Box,
   Container,
@@ -30,7 +33,8 @@ import {
   AccordionDetails,
   IconButton,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
+  Snackbar
 } from '@mui/material';
 import {
   DirectionsBike as BikeIcon,
@@ -50,12 +54,19 @@ import {
 
 function BikeDetailMUI() {
   const theme = useTheme();
+  const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const mode = searchParams.get('mode') || 'purchase';
   const locationId = searchParams.get('location');
   
+  // Context hooks
+  const { authState } = useContext(AuthContext);
+  const { addToCart } = useContext(CartContext);
+  const { addFavorite, removeFavorite, checkIsFavorite } = useContext(FavoritesContext);
+  
+  // State
   const [bike, setBike] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -64,6 +75,12 @@ function BikeDetailMUI() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [quantity, setQuantity] = useState(1);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
 
   // Load bike details from API
   useEffect(() => {
@@ -73,6 +90,16 @@ function BikeDetailMUI() {
         const res = await axios.get(`/api/bikes/${id}`);
         setBike(res.data);
         setError(null);
+        
+        // Check if bike is in favorites
+        if (authState.isAuthenticated) {
+          try {
+            const isFav = await checkIsFavorite(id);
+            setFavorite(isFav);
+          } catch (err) {
+            console.error('Error checking if bike is favorite:', err);
+          }
+        }
       } catch (err) {
         console.error('Error fetching bike details:', err);
         setError('Failed to load bike details. Please try again.');
@@ -82,7 +109,7 @@ function BikeDetailMUI() {
     };
 
     fetchBikeDetails();
-  }, [id]);
+  }, [id, authState.isAuthenticated, checkIsFavorite]);
 
   // Handle Tab Change
   const handleTabChange = (event, newValue) => {
@@ -90,15 +117,107 @@ function BikeDetailMUI() {
   };
 
   // Toggle Favorite
-  const toggleFavorite = () => {
-    setFavorite(!favorite);
+  const toggleFavorite = async () => {
+    if (!authState.isAuthenticated) {
+      setSnackbar({
+        open: true,
+        message: 'Please login to add items to favorites',
+        severity: 'warning'
+      });
+      return;
+    }
+    
+    setActionLoading(true);
+    try {
+      if (favorite) {
+        await removeFavorite(id);
+        setFavorite(false);
+        setSnackbar({
+          open: true,
+          message: `${bike.name} removed from favorites`,
+          severity: 'success'
+        });
+      } else {
+        await addFavorite(id);
+        setFavorite(true);
+        setSnackbar({
+          open: true,
+          message: `${bike.name} added to favorites`,
+          severity: 'success'
+        });
+      }
+    } catch (err) {
+      console.error('Error updating favorites:', err);
+      setSnackbar({
+        open: true,
+        message: 'Error updating favorites. Please try again.',
+        severity: 'error'
+      });
+    } finally {
+      setActionLoading(false);
+    }
   };
 
-  // Get tomorrow's date
-  const getTomorrow = () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split('T')[0];
+  // Handle Add to Cart
+  const handleAddToCart = async () => {
+    if (!authState.isAuthenticated) {
+      setSnackbar({
+        open: true,
+        message: 'Please login to add items to cart',
+        severity: 'warning'
+      });
+      return;
+    }
+    
+    setActionLoading(true);
+    try {
+      if (mode === 'rental' && (!startDate || !endDate)) {
+        setSnackbar({
+          open: true,
+          message: 'Please select start and end dates',
+          severity: 'warning'
+        });
+        setActionLoading(false);
+        return;
+      }
+      
+      const success = await addToCart(
+        id,
+        mode,
+        quantity,
+        mode === 'rental' ? startDate : null,
+        mode === 'rental' ? endDate : null,
+        mode === 'rental' ? locationId : null
+      );
+      
+      if (success) {
+        setSnackbar({
+          open: true,
+          message: `${bike.name} added to cart`,
+          severity: 'success'
+        });
+      } else {
+        throw new Error('Failed to add to cart');
+      }
+    } catch (err) {
+      console.error('Error adding to cart:', err);
+      setSnackbar({
+        open: true,
+        message: 'Error adding to cart. Please try again.',
+        severity: 'error'
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Handle Buy Now / Book Now
+  const handleBuyNow = async () => {
+    await handleAddToCart();
+    // Only navigate if the add to cart was successful
+    if (!actionLoading) {
+      navigate('/cart');
+    }
   };
 
   // Calculate rental price
@@ -110,6 +229,14 @@ function BikeDetailMUI() {
     const days = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
     
     return (bike.rentalPrice * days).toFixed(2);
+  };
+
+  // Handle close snackbar
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbar(prev => ({ ...prev, open: false }));
   };
 
   // Format today's date for min date in calendar
@@ -176,6 +303,7 @@ function BikeDetailMUI() {
             <IconButton 
               color={favorite ? "error" : "default"}
               onClick={toggleFavorite}
+              disabled={actionLoading}
               sx={{ 
                 position: 'absolute', 
                 top: 16, 
@@ -240,9 +368,9 @@ function BikeDetailMUI() {
                 icon={<BikeIcon />}
                 sx={{ mr: 1 }}
               />
-              <Rating value={4.5} precision={0.5} size="small" readOnly />
+              <Rating value={bike.averageRating || 0} precision={0.5} size="small" readOnly />
               <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-                (24 reviews)
+                ({bike.reviewCount || 0} reviews)
               </Typography>
             </Box>
             
@@ -323,11 +451,13 @@ function BikeDetailMUI() {
                     variant="contained"
                     color="primary"
                     size="large"
-                    startIcon={<CartIcon />}
+                    startIcon={actionLoading ? <CircularProgress size={20} color="inherit" /> : <CartIcon />}
                     fullWidth
                     sx={{ mb: 2 }}
+                    onClick={handleAddToCart}
+                    disabled={actionLoading || bike.purchaseStock < 1}
                   >
-                    Add to Cart
+                    {actionLoading ? 'Adding...' : 'Add to Cart'}
                   </Button>
                   
                   <Button
@@ -335,6 +465,8 @@ function BikeDetailMUI() {
                     color="primary"
                     size="large"
                     fullWidth
+                    onClick={handleBuyNow}
+                    disabled={actionLoading || bike.purchaseStock < 1}
                   >
                     Buy Now
                   </Button>
@@ -385,11 +517,12 @@ function BikeDetailMUI() {
                     variant="contained"
                     color="primary"
                     size="large"
-                    startIcon={<CalendarIcon />}
+                    startIcon={actionLoading ? <CircularProgress size={20} color="inherit" /> : <CalendarIcon />}
                     fullWidth
-                    disabled={!startDate || !endDate}
+                    onClick={handleBuyNow}
+                    disabled={!startDate || !endDate || actionLoading}
                   >
-                    Book Now
+                    {actionLoading ? 'Processing...' : 'Book Now'}
                   </Button>
                 </Box>
               )}
@@ -517,6 +650,22 @@ function BikeDetailMUI() {
           ))}
         </Grid>
       </Box>
+      
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity}
+          variant="filled"
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }

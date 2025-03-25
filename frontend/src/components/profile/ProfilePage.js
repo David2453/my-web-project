@@ -1,6 +1,7 @@
 // frontend/src/components/profile/ProfilePage.js
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import FavoritesTab from './FavoritesTab';
 import {
@@ -24,7 +25,10 @@ import {
   ListItemText,
   IconButton,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
+  Snackbar,
+  Alert,
+  CircularProgress
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -40,7 +44,7 @@ import {
 function ProfilePage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const { authState } = useContext(AuthContext);
+  const { authState, setAuthState } = useContext(AuthContext);
   const { user } = authState;
   
   const [tabValue, setTabValue] = useState(0);
@@ -52,6 +56,25 @@ function ProfilePage() {
     phone: user?.profile?.phone || '',
     address: user?.profile?.address || ''
   });
+  const [loading, setLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
+
+  // Update profile data when user data changes
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        firstName: user.profile?.firstName || '',
+        lastName: user.profile?.lastName || '',
+        email: user.email || '',
+        phone: user.profile?.phone || '',
+        address: user.profile?.address || ''
+      });
+    }
+  }, [user]);
   
   // Handle tab change
   const handleTabChange = (event, newValue) => {
@@ -60,6 +83,16 @@ function ProfilePage() {
   
   // Handle editing profile
   const toggleEditing = () => {
+    // Reset form data to current user data when cancelling
+    if (editing) {
+      setProfileData({
+        firstName: user.profile?.firstName || '',
+        lastName: user.profile?.lastName || '',
+        email: user.email || '',
+        phone: user.profile?.phone || '',
+        address: user.profile?.address || ''
+      });
+    }
     setEditing(!editing);
   };
   
@@ -73,19 +106,62 @@ function ProfilePage() {
   };
   
   // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Here you would typically call an API to update the user's profile
-    console.log('Profile data to save:', profileData);
-    setEditing(false);
+    setLoading(true);
+    
+    try {
+      // Prepare data for API call
+      const updatedProfile = {
+        username: user.username, // Keep existing username
+        email: user.email, // Keep existing email
+        profile: {
+          firstName: profileData.firstName,
+          lastName: profileData.lastName,
+          phone: profileData.phone,
+          address: profileData.address
+        }
+      };
+      
+      // Make API call to update profile
+      const res = await axios.put('/api/users/me', updatedProfile);
+      
+      // Update the auth context with the new user data
+      setAuthState(prev => ({
+        ...prev,
+        user: res.data
+      }));
+      
+      setSnackbar({
+        open: true,
+        message: 'Profile updated successfully',
+        severity: 'success'
+      });
+      
+      setEditing(false);
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      setSnackbar({
+        open: true,
+        message: err.response?.data?.msg || 'Failed to update profile',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
   
   // Get the first letter of the user's name or username for the avatar
   const getAvatarLetter = () => {
-    if (profileData.firstName) {
-      return profileData.firstName.charAt(0).toUpperCase();
+    if (user?.profile?.firstName) {
+      return user.profile.firstName.charAt(0).toUpperCase();
     }
     return user?.username?.charAt(0).toUpperCase() || 'U';
+  };
+
+  // Close snackbar
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
   };
   
   return (
@@ -118,7 +194,10 @@ function ProfilePage() {
                 {user?.username}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Member since {new Date().toLocaleDateString()}
+                {user?.email}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Member since {new Date(user?.createdAt || Date.now()).toLocaleDateString()}
               </Typography>
               
               <Button 
@@ -273,6 +352,7 @@ function ProfilePage() {
                         variant="outlined"
                         startIcon={<CancelIcon />}
                         onClick={toggleEditing}
+                        disabled={loading}
                       >
                         Cancel
                       </Button>
@@ -280,9 +360,10 @@ function ProfilePage() {
                         type="submit"
                         variant="contained"
                         color="primary"
-                        startIcon={<SaveIcon />}
+                        startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+                        disabled={loading}
                       >
-                        Save Changes
+                        {loading ? 'Saving...' : 'Save Changes'}
                       </Button>
                     </Box>
                   </Box>
@@ -294,7 +375,7 @@ function ProfilePage() {
                           First Name
                         </Typography>
                         <Typography variant="body1" sx={{ mb: 2 }}>
-                          {profileData.firstName || 'Not provided'}
+                          {user?.profile?.firstName || 'Not provided'}
                         </Typography>
                       </Grid>
                       <Grid item xs={12} sm={6}>
@@ -302,7 +383,7 @@ function ProfilePage() {
                           Last Name
                         </Typography>
                         <Typography variant="body1" sx={{ mb: 2 }}>
-                          {profileData.lastName || 'Not provided'}
+                          {user?.profile?.lastName || 'Not provided'}
                         </Typography>
                       </Grid>
                       <Grid item xs={12}>
@@ -310,7 +391,7 @@ function ProfilePage() {
                           Email Address
                         </Typography>
                         <Typography variant="body1" sx={{ mb: 2 }}>
-                          {profileData.email}
+                          {user?.email}
                         </Typography>
                       </Grid>
                       <Grid item xs={12}>
@@ -318,7 +399,7 @@ function ProfilePage() {
                           Phone Number
                         </Typography>
                         <Typography variant="body1" sx={{ mb: 2 }}>
-                          {profileData.phone || 'Not provided'}
+                          {user?.profile?.phone || 'Not provided'}
                         </Typography>
                       </Grid>
                       <Grid item xs={12}>
@@ -326,7 +407,7 @@ function ProfilePage() {
                           Address
                         </Typography>
                         <Typography variant="body1" sx={{ mb: 2 }}>
-                          {profileData.address || 'Not provided'}
+                          {user?.profile?.address || 'Not provided'}
                         </Typography>
                       </Grid>
                     </Grid>
@@ -382,6 +463,23 @@ function ProfilePage() {
           </Paper>
         </Grid>
       </Grid>
+
+      {/* Notification snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity}
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }
