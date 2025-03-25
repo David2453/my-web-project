@@ -6,6 +6,8 @@
 .pnp.js
 home_background.jpg
 video2.mp4
+frontend/public/videos/*.MOV
+
 
 # testing
 /coverage
