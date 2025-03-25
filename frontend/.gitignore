@@ -4,7 +4,8 @@
 /node_modules
 /.pnp
 .pnp.js
-/frontend/public/videos/*
+home_background.jpg
+video2.mp4
 
 # testing
 /coverage
