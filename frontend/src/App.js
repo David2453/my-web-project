@@ -20,6 +20,8 @@ import BikeDetailMUI from './components/bikes/BikeDetailMUI';
 import { AuthProvider } from './components/context/AuthContext';
 import { FavoritesProvider } from './components/context/FavoritesContext';
 import { CartProvider } from './components/context/CartContext';
+import { OrdersProvider } from './components/context/OrdersContext';
+
 import theme from './theme';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
@@ -42,6 +44,7 @@ function App() {
       <AuthProvider>
         <FavoritesProvider>
           <CartProvider>
+          <OrdersProvider>  {/* Add this line */}
             <Router>
               <ScrollToTop />
               <div className="App">
@@ -92,6 +95,7 @@ function App() {
                 </div>
               </div>
             </Router>
+          </OrdersProvider>  {/* Add this closing tag */}
           </CartProvider>
         </FavoritesProvider>
       </AuthProvider>

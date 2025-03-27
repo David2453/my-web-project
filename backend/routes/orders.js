@@ -1,4 +1,4 @@
-// backend/routes/orders.js
+// backend/routes/orders.js - Enhanced with additional routes
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
@@ -220,6 +220,71 @@ router.put('/:id', auth, async (req, res) => {
     if (err.kind === 'ObjectId') {
       return res.status(404).json({ msg: 'Order not found' });
     }
+    res.status(500).send('Server error');
+  }
+});
+
+// @route   GET api/orders/user/rentals
+// @desc    Get user's upcoming rental items
+// @access  Private
+router.get('/user/rentals', auth, async (req, res) => {
+  try {
+    const today = new Date();
+    
+    // Find orders with rental items that have an end date in the future
+    const orders = await Order.find({ 
+      user: req.user.id,
+      'items.type': 'rental',
+      'items.endDate': { $gte: today }
+    })
+    .populate('items.bike', 'name type image')
+    .populate('items.location', 'name city code')
+    .sort({ 'items.startDate': 1 });
+    
+    // Extract rental items from orders
+    const rentalItems = [];
+    
+    orders.forEach(order => {
+      order.items.forEach(item => {
+        if (item.type === 'rental' && new Date(item.endDate) >= today) {
+          rentalItems.push({
+            id: `${order._id}-${item._id}`,
+            orderId: order._id,
+            bikeId: item.bike._id,
+            bikeName: item.bike.name,
+            bikeType: item.bike.type,
+            startDate: item.startDate,
+            endDate: item.endDate,
+            location: item.location,
+            status: order.status,
+            createdAt: order.createdAt
+          });
+        }
+      });
+    });
+    
+    res.json(rentalItems);
+  } catch (err) {
+    console.error('Error fetching rental items:', err.message);
+    res.status(500).send('Server error');
+  }
+});
+
+// @route   GET api/orders/recent
+// @desc    Get user's recent orders
+// @access  Private
+router.get('/recent', auth, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 5;
+    
+    const orders = await Order.find({ user: req.user.id })
+      .populate('items.bike', 'name type image')
+      .sort({ createdAt: -1 })
+      .limit(limit);
+    
+    res.json(orders);
+  } catch (err) {
+    console.error('Error fetching recent orders:', err.message);
     res.status(500).send('Server error');
   }
 });

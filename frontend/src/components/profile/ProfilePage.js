@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import FavoritesTab from './FavoritesTab';
+import OrdersTab from './OrdersTab';
+
 import {
   Container,
   Box,
@@ -75,6 +77,16 @@ function ProfilePage() {
       });
     }
   }, [user]);
+
+  useEffect(() => {
+    // Check if there's a tab value in localStorage
+    const savedTabValue = localStorage.getItem('profileTabValue');
+    if (savedTabValue) {
+      setTabValue(parseInt(savedTabValue));
+      // Clear it after use
+      localStorage.removeItem('profileTabValue');
+    }
+  }, []);
   
   // Handle tab change
   const handleTabChange = (event, newValue) => {
@@ -434,17 +446,7 @@ function ProfilePage() {
             
             {/* Other tabs would go here */}
             {tabValue === 3 && (
-              <Box>
-                <Typography variant="h5" component="h2" fontWeight="bold" gutterBottom>
-                  <HistoryIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                  Order History
-                </Typography>
-                <Divider sx={{ mb: 3 }} />
-                
-                <Typography variant="body1" align="center" sx={{ py: 4 }}>
-                  Your order history will be displayed here.
-                </Typography>
-              </Box>
+              <OrdersTab />
             )}
             
             {tabValue === 4 && (

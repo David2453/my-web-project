@@ -147,11 +147,11 @@ function Bikes() {
   return (
     <Container maxWidth="lg" sx={{ py: 5 }}>
       <Box textAlign="center" mb={5}>
-        <Typography variant="h3" component="h1" gutterBottom fontWeight="bold">
-          Our Bicycles
+        <Typography variant="h1" fontSize={60} color='#4ce600'>
+          Biciclete
         </Typography>
-        <Typography variant="h6" color="text.secondary">
-          Browse our selection of high-quality bikes available for purchase or rental
+        <Typography variant="h2" fontSize={30} color='white' >
+          {/* Browse our selection of high-quality bikes available for purchase or rental */}
         </Typography>
       </Box>
 

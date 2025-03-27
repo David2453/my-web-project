@@ -43,15 +43,14 @@ function Home() {
       {/* Featured Bikes Section */}
       <div className="featured-section">
         <div className="container">
-          <h2 className="section-title">Featured Bikes</h2>
+          <h2 className="section-title" style={{color:'#2cd144'}} >Featured Bikes</h2>
           <div className="row">
             {featuredBikes.map(bike => (
               <div className="col-md-4 mb-4" key={bike.id}>
                 <div className="card bike-card h-100">
                   <img src={bike.image} className="card-img-top bike-img" alt={bike.name} />
                   <div className="card-body">
-                    <h5 className="card-title">{bike.name}</h5>
-                    <p className="card-text bike-type">{bike.type}</p>
+                    <h2 style={{fontSize:24,color:'white' }}>{bike.type}</h2>
                     <div className="d-flex justify-content-between align-items-center">
                       <div>
                         <p className="mb-0 bike-price"><strong>Buy:</strong> ${bike.price}</p>

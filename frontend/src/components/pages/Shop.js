@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { style } from '@mui/system';
+import { green } from '@mui/material/colors';
 
 function Shop() {
   const [bikes, setBikes] = useState([]);
@@ -28,10 +30,12 @@ function Shop() {
 
   // Rest of your component remains the same...
 
+
   return (
     <div className="container py-5">
       <h1 className="mb-4 text-center">Bike Shop</h1>
-      <p className="lead text-center mb-5">Browse our selection of high-quality bikes available for purchase</p>
+      {/* <p></p> */}
+      <h2>Browse our selection of high-quality bikes available for purchase</h2>
       
       {loading ? (
         <div className="text-center py-5">
@@ -53,7 +57,7 @@ function Shop() {
                   style={{ height: "290px", objectFit: "cover" }}
                 />
                 <div className="card-body">
-                  <h5 className="card-title">{bike.name}</h5>
+                  <h2 style={{fontSize:20,color:'#9bff9e'}} className="card-title">{bike.name}</h2>
                   <p className="card-text text-muted">{bike.type}</p>
                   <p className="card-text">{bike.description}</p>
                   <div className="d-flex justify-content-between align-items-center">

@@ -61,9 +61,10 @@ useEffect(() => {
   return (
     <div className="container py-5" >
       <h1 className="mb-4 text-center">Bike Rentals</h1>
-      <p className="lead text-center mb-5">
+      <p></p>
+      <h2 className="lead text-center mb-5">
         Rent a bike and explore your favorite city on two wheels
-      </p>
+      </h2>
       
       <div className="row justify-content-center mb-5">
         <div className="col-md-6">
@@ -117,7 +118,7 @@ useEffect(() => {
                     style={{ height: "280px", objectFit: "cover" }}
                   />
                   <div className="card-body">
-                    <h5 className="card-title">{bike.name}</h5>
+                    <h2 style={{fontSize:20}} >{bike.name}</h2>
                     <p className="card-text text-muted">{bike.type}</p>
                     <p className="card-text">{bike.description}</p>
                     <div className="d-flex justify-content-between align-items-center">

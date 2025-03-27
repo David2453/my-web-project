@@ -3,6 +3,8 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
+import { OrdersContext } from '../context/OrdersContext';
+
 import {
   Box,
   Container,
@@ -49,13 +51,15 @@ import {
   ShoppingBag as ShoppingBagIcon
 } from '@mui/icons-material';
 
+
+
 function CartPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const { authState } = useContext(AuthContext);
   const { cartItems, loading: cartLoading, error: cartError, updateCartItem, removeFromCart, clearCart, calculateTotals } = useContext(CartContext);
-  
+  const { /*fetchOrders*/ } = useContext(OrdersContext);
   // State for checkout
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -138,21 +142,33 @@ function CartPage() {
   };
   
   // Handle navigation between checkout steps
-  const handleNext = () => {
-    // In a real app, validate each step before proceeding
-    setLoading(true);
-    
-    // Simulate API call or processing
-    setTimeout(() => {
-      setActiveStep(prevStep => prevStep + 1);
-      setLoading(false);
+  const { fetchOrders } = useContext(OrdersContext);
+
+const handleNext = async () => {
+  setLoading(true);
+  
+  try {
+    // If we've completed the checkout, clear the cart and fetch orders
+    if (activeStep === steps.length - 2) {
+      await clearCart();
       
-      // If we've completed the checkout, clear the cart
-      if (activeStep === steps.length - 2) {
-        clearCart();
-      }
-    }, 1000);
-  };
+      // Manually fetch orders after clearing the cart
+      await fetchOrders();
+    }
+    
+    // Move to next step
+    setActiveStep(prevStep => prevStep + 1);
+  } catch (err) {
+    console.error('Error during checkout:', err);
+    setSnackbar({
+      open: true,
+      message: 'Error completing order',
+      severity: 'error'
+    });
+  } finally {
+    setLoading(false);
+  }
+};
   
   const handleBack = () => {
     setActiveStep(prevStep => prevStep - 1);
@@ -175,6 +191,8 @@ function CartPage() {
     const end = new Date(endDate);
     return Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
   };
+
+  
   
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>

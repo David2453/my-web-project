@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import './ResponsiveVideo.css'; // Vom crea acest fișier pentru a ne asigura că stilurile noastre sunt prioritare
-
+import '../../../../frontend/src/'
 const ResponsiveVideo = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const videoRef = useRef(null);
@@ -41,7 +41,7 @@ const ResponsiveVideo = () => {
       {/* Conținutul hero - text și butoane */}
       <div className="hero-content">
         <h1>Find Your Perfect Ride</h1>
-        <p>Rent or buy high-quality bikes for any terrain or occasion</p>
+        <h2>Rent or buy high-quality bikes for any terrain or occasion</h2>
         <div className="hero-buttons">
           <Link to="/rentals" className="btn-primary">Rent a Bike</Link>
           <Link to="/shop" className="btn-secondary">Browse Shop</Link>

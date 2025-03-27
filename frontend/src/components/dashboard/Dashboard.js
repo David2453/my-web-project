@@ -1,20 +1,22 @@
 // frontend/src/components/dashboard/Dashboard.js
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { OrdersContext } from '../context/OrdersContext';
 import './Dashboard.css';
 
 function Dashboard() {
   const { authState, logout } = useContext(AuthContext);
   const { user } = authState;
+  const { getUpcomingRentals, getRecentOrders, loading: ordersLoading } = useContext(OrdersContext);
   const navigate = useNavigate();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   
-  // Mock data for upcoming bookings
-
-  const upcomingBookings = [
-    { id: 101, date: '2023-06-28', bike: 'City Cruiser', location: 'New York City Store', duration: '2 days' }
-  ];
+  // Get upcoming bookings from the orders context
+  const upcomingBookings = getUpcomingRentals ? getUpcomingRentals() : [];
+  
+  // Get recent orders
+  const recentOrders = getRecentOrders ? getRecentOrders(3) : [];
 
   const handleLogoutClick = () => {
     setShowLogoutConfirm(true);
@@ -29,6 +31,21 @@ function Dashboard() {
     setShowLogoutConfirm(false);
   };
   
+  // Format date
+  const formatDate = (dateString) => {
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+  
+  // Calculate duration between two dates in days
+  const calculateDuration = (startDate, endDate) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return `${diffDays} ${diffDays === 1 ? 'day' : 'days'}`;
+  };
+  
   return (
     <div className="dashboard-container py-5">
       <div className="container">
@@ -41,7 +58,7 @@ function Dashboard() {
                   <div>
                     <h2 className="mb-1">Welcome back, {user?.username}!</h2>
                     <p className="text-muted mb-md-0">
-                      Here's an overview of your upcoming bookings.
+                      Here's an overview of your upcoming bookings and recent orders.
                     </p>
                   </div>
                   <div className="d-flex mt-3 mt-md-0">
@@ -62,14 +79,19 @@ function Dashboard() {
         <div className="row">
           {/* Main Content */}
           <div className="col-lg-8">
-
             {/* Upcoming Bookings */}
-            <div className="card shadow-sm">
+            <div className="card shadow-sm mb-4">
               <div className="card-header bg-white">
                 <h5 className="mb-0">Upcoming Bookings</h5>
               </div>
               <div className="card-body">
-                {upcomingBookings.length === 0 ? (
+                {ordersLoading ? (
+                  <div className="text-center py-3">
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                  </div>
+                ) : upcomingBookings.length === 0 ? (
                   <p className="text-center text-muted py-3">No upcoming bookings found.</p>
                 ) : (
                   <div className="table-responsive">
@@ -86,24 +108,83 @@ function Dashboard() {
                       <tbody>
                         {upcomingBookings.map(booking => (
                           <tr key={booking.id}>
-                            <td>{booking.date}</td>
-                            <td>{booking.bike}</td>
-                            <td>{booking.location}</td>
-                            <td>{booking.duration}</td>
+                            <td>{formatDate(booking.startDate)}</td>
+                            <td>{booking.bikeName}</td>
+                            <td>{booking.location ? booking.location.name : 'N/A'}</td>
+                            <td>{calculateDuration(booking.startDate, booking.endDate)}</td>
                             <td>
                               <div className="btn-group btn-group-sm">
-                                <button className="btn btn-outline-primary">
-                                  Details
-                                </button>
-                                <button className="btn btn-outline-danger">
-                                  Cancel
-                                </button>
+                                <Link 
+                                  to={`/bikes/${booking.bikeId}`} 
+                                  className="btn btn-outline-primary"
+                                >
+                                  View Bike
+                                </Link>
                               </div>
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Recent Orders */}
+            <div className="card shadow-sm">
+              <div className="card-header bg-white">
+                <h5 className="mb-0">Recent Orders</h5>
+              </div>
+              <div className="card-body">
+                {ordersLoading ? (
+                  <div className="text-center py-3">
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                  </div>
+                ) : recentOrders.length === 0 ? (
+                  <p className="text-center text-muted py-3">No recent orders found.</p>
+                ) : (
+                  <div className="table-responsive">
+                    <table className="table table-hover">
+                      <thead>
+                        <tr>
+                          <th>Order ID</th>
+                          <th>Date</th>
+                          <th>Items</th>
+                          <th>Total</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {recentOrders.map(order => (
+                          <tr key={order.id}>
+                            <td>#{order.id.substring(order.id.length - 6).toUpperCase()}</td>
+                            <td>{formatDate(order.createdAt)}</td>
+                            <td>{order.items.length} {order.items.length === 1 ? 'item' : 'items'}</td>
+                            <td>${order.total.toFixed(2)}</td>
+                            <td>
+                              <span className={`badge bg-${
+                                order.status === 'pending' ? 'warning' :
+                                order.status === 'processing' ? 'primary' :
+                                order.status === 'shipped' ? 'info' :
+                                order.status === 'delivered' ? 'success' :
+                                order.status === 'cancelled' ? 'danger' :
+                                'secondary'
+                              }`}>
+                                {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <div className="text-center mt-3">
+                      <Link to="/profile" className="btn btn-outline-primary btn-sm" onClick={() => navigate('/profile')}>
+                        View All Orders
+                      </Link>
+                    </div>
                   </div>
                 )}
               </div>
@@ -169,6 +250,9 @@ function Dashboard() {
                   </Link>
                   <Link to="/rentals" className="list-group-item list-group-item-action">
                     <i className="bi bi-calendar-check me-2"></i> Rent a Bike
+                  </Link>
+                  <Link to="/profile" className="list-group-item list-group-item-action">
+                    <i className="bi bi-person me-2"></i> Profile Settings
                   </Link>
                   {user?.role === 'admin' && (
                     <Link to="/admin" className="list-group-item list-group-item-action">
