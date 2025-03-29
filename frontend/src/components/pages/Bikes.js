@@ -203,11 +203,11 @@ function Bikes() {
                 p: 4,
                 textAlign: 'center',
                 borderRadius: 2,
-                backgroundColor: 'rgba(255, 152, 0, 0.08)',
-                border: '1px solid rgba(255, 152, 0, 0.2)'
+                backgroundColor: 'rgba(255, 152, 0, 0.7)',
+                border: '4px solid rgba(255, 152, 0, 0.9)'
               }}
             >
-              <WarningIcon sx={{ fontSize: 60, color: 'warning.main', mb: 2 }} />
+              <WarningIcon sx={{ fontSize: 60, color: '#3b5af5', mb: 2 }} />
               <Typography variant="h5" gutterBottom fontWeight="medium">
                 No bikes match your filters
               </Typography>

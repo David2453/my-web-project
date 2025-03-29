@@ -58,8 +58,10 @@ function BikeDetailMUI() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { id } = useParams();
   const [searchParams] = useSearchParams();
-  const mode = searchParams.get('mode') || 'purchase';
-  const locationId = searchParams.get('location');
+const initialMode = searchParams.get('mode') || 'purchase';
+const initialLocationId = searchParams.get('location');
+const [mode, setMode] = useState(initialMode);
+const [locationId, setLocationId] = useState(initialLocationId);
   
   // Context hooks
   const { authState } = useContext(AuthContext);
@@ -106,16 +108,82 @@ function BikeDetailMUI() {
       } finally {
         setLoading(false);
       }
+
+      
     };
 
     fetchBikeDetails();
-  }, [id, authState.isAuthenticated, checkIsFavorite]);
-
+  }, [id, authState.isAuthenticated, checkIsFavorite, mode]); // Added mode as dependency
+  // This useEffect watches for changes in the mode from URL parameters
+// This useEffect watches for changes in the mode from URL parameters
+useEffect(() => {
+  // Get mode from URL parameters
+  const currentMode = searchParams.get('mode') || 'purchase';
+  
+  // If the tab is on position 1 (the second tab), but we're in a mode that should
+  // have the first tab selected, reset the tab selection
+  if (tabValue === 1 && mode === currentMode) {
+    setTabValue(0);
+  }
+  
+  // Reset form fields
+  setStartDate('');
+  setEndDate('');
+  setQuantity(1);
+}, [searchParams, mode, tabValue]);
+  
+// This useEffect watches for changes in the URL parameters without causing refreshes
+useEffect(() => {
+  // Get current mode from URL parameters
+  const currentMode = searchParams.get('mode') || 'purchase';
+  
+  // If the mode has changed, reset the tab to the first position
+  if (currentMode !== mode) {
+    setTabValue(0);
+    
+    // Reset form fields when mode changes
+    setStartDate('');
+    setEndDate('');
+    setQuantity(1);
+  }
+}, [searchParams, mode]);
+  
+  // This useEffect watches for changes in the URL parameters without causing refreshes
+// useEffect(() => {
+//   // Get current mode from URL parameters
+//   const currentMode = searchParams.get('mode') || 'purchase';
+  
+//   // If the mode has changed, reset the tab to the first position
+//   if (currentMode !== mode) {
+//     setTabValue(0);
+    
+//     // Reset form fields when mode changes
+//     setStartDate('');
+//     setEndDate('');
+//     setQuantity(1);
+//   }
+// }, [searchParams, mode]);
+  
   // Handle Tab Change
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
-  };
-
+  // Handle Tab Change
+// Handle Tab Change
+const handleTabChange = (event, newValue) => {
+  setTabValue(newValue);
+  
+  if (newValue === 1) {
+    // Instead of changing URL params, just update the state directly
+    const newMode = mode === 'purchase' ? 'rental' : 'purchase';
+    setMode(newMode);
+    
+    // Reset form fields
+    setStartDate('');
+    setEndDate('');
+    setQuantity(1);
+    
+    // Set tab back to 0 (first tab)
+    setTabValue(0);
+  }
+};
   // Toggle Favorite
   const toggleFavorite = async () => {
     if (!authState.isAuthenticated) {
@@ -409,25 +477,23 @@ function BikeDetailMUI() {
             
             {/* Action section - depends on mode */}
             <Box>
-              <Tabs 
-                value={tabValue} 
-                onChange={handleTabChange} 
-                variant="fullWidth" 
-                sx={{ mb: 2 }}
-              >
-                <Tab 
-                  label={mode === 'purchase' ? "Purchase" : "Rent"} 
-                  icon={mode === 'purchase' ? <CartIcon /> : <CalendarIcon />} 
-                  iconPosition="start"
-                />
-                <Tab 
-                  label={mode === 'purchase' ? "Rent Instead" : "Purchase Instead"} 
-                  icon={<CompareIcon />} 
-                  iconPosition="start"
-                  component={Link}
-                  to={mode === 'purchase' ? `/bikes/${id}?mode=rental` : `/bikes/${id}?mode=purchase`}
-                />
-              </Tabs>
+            <Tabs 
+  value={tabValue} 
+  onChange={handleTabChange} 
+  variant="fullWidth" 
+  sx={{ mb: 2 }}
+>
+  <Tab 
+    label={mode === 'purchase' ? "Purchase" : "Rent"} 
+    icon={mode === 'purchase' ? <CartIcon /> : <CalendarIcon />} 
+    iconPosition="start"
+  />
+  <Tab 
+    label={mode === 'purchase' ? "Rent Instead" : "Purchase Instead"} 
+    icon={<CompareIcon />} 
+    iconPosition="start"
+  />
+</Tabs>
               
               {/* Purchase Form */}
               {mode === 'purchase' && tabValue === 0 && (

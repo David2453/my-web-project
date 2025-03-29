@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
 import { OrdersContext } from '../context/OrdersContext';
+import axios from 'axios';
 
 import {
   Box,
@@ -71,6 +72,24 @@ function CartPage() {
     severity: 'success'
   });
 
+  const [shippingData, setShippingData] = useState({
+    firstName: authState.user?.profile?.firstName || '',
+    lastName: authState.user?.profile?.lastName || '',
+    address: authState.user?.profile?.address || '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: 'USA',
+    phone: authState.user?.profile?.phone || ''
+  });
+  
+  const [paymentData, setPaymentData] = useState({
+    cardName: '',
+    cardNumber: '',
+    expirationDate: '',
+    cvv: ''
+  });
+
   // Extract purchase and rental items from cart
   const purchaseItems = cartItems.filter(item => item.itemType === 'purchase');
   const rentalItems = cartItems.filter(item => item.itemType === 'rental');
@@ -114,6 +133,24 @@ function CartPage() {
       });
     }
   };
+
+  // Add this handler for shipping form inputs
+const handleShippingInputChange = (e) => {
+  const { name, value } = e.target;
+  setShippingData(prev => ({
+    ...prev,
+    [name]: value
+  }));
+};
+
+// Add this handler for payment form inputs
+const handlePaymentInputChange = (e) => {
+  const { name, value } = e.target;
+  setPaymentData(prev => ({
+    ...prev,
+    [name]: value
+  }));
+};
   
   // Handle item removal confirmation dialog
   const handleRemoveItemClick = (item) => {
@@ -144,31 +181,118 @@ function CartPage() {
   // Handle navigation between checkout steps
   const { fetchOrders } = useContext(OrdersContext);
 
-const handleNext = async () => {
-  setLoading(true);
-  
-  try {
-    // If we've completed the checkout, clear the cart and fetch orders
-    if (activeStep === steps.length - 2) {
-      await clearCart();
-      
-      // Manually fetch orders after clearing the cart
-      await fetchOrders();
-    }
+  const handleNext = async () => {
+    setLoading(true);
     
-    // Move to next step
-    setActiveStep(prevStep => prevStep + 1);
-  } catch (err) {
-    console.error('Error during checkout:', err);
-    setSnackbar({
-      open: true,
-      message: 'Error completing order',
-      severity: 'error'
-    });
-  } finally {
-    setLoading(false);
-  }
-};
+    try {
+      // If we're on the payment step (last step before confirmation)
+      if (activeStep === steps.length - 2) {
+        // Validate required fields
+        if (paymentData.cardNumber.trim() === '' || paymentData.expirationDate.trim() === '' || paymentData.cvv.trim() === '') {
+          throw new Error('Please fill in all payment information');
+        }
+        
+        // Make sure axios is using the authentication token
+        const token = localStorage.getItem('token');
+        if (token) {
+          axios.defaults.headers.common['x-auth-token'] = token;
+        } else {
+          throw new Error('Authentication required. Please log in again.');
+        }
+        
+        // Gather order data from our form inputs
+        const orderData = {
+          shippingAddress: {
+            firstName: shippingData.firstName,
+            lastName: shippingData.lastName,
+            address: shippingData.address,
+            city: shippingData.city,
+            state: shippingData.state,
+            zipCode: shippingData.zipCode,
+            country: shippingData.country || 'USA',
+            phone: shippingData.phone || ''
+          },
+          paymentMethod: "Credit Card",
+          paymentDetails: {
+            transactionId: `tr-${Date.now()}`,
+            last4: paymentData.cardNumber.slice(-4)
+          }
+        };
+        
+        console.log('Sending order data:', orderData);
+        
+        try {
+          // Create the order first
+          const orderResponse = await axios.post('/api/orders', orderData);
+          console.log('Order created successfully:', orderResponse.data);
+          
+          // Then clear the cart
+          await clearCart();
+          
+          // Finally fetch updated orders
+          await fetchOrders();
+          
+          // Move to next step only after successful order creation
+          setActiveStep(prevStep => prevStep + 1);
+        } catch (orderError) {
+          console.error('Order creation error:', orderError);
+          let errorMessage = 'Failed to create order.';
+          
+          if (orderError.response) {
+            // The server responded with a status other than 200 range
+            errorMessage = orderError.response.data.msg || `Server error (${orderError.response.status})`;
+            console.error('Server response:', orderError.response.data);
+          } else if (orderError.request) {
+            // The request was made but no response was received
+            errorMessage = 'No response from server. Please check your internet connection.';
+          }
+          
+          setSnackbar({
+            open: true,
+            message: errorMessage,
+            severity: 'error'
+          });
+          setLoading(false);
+          return;
+        }
+      } else {
+        // If we're on the shipping step, validate required fields
+        if (activeStep === 1) {
+          if (
+            shippingData.firstName.trim() === '' || 
+            shippingData.lastName.trim() === '' || 
+            shippingData.address.trim() === '' || 
+            shippingData.city.trim() === '' || 
+            shippingData.state.trim() === '' || 
+            shippingData.zipCode.trim() === ''
+          ) {
+            setSnackbar({
+              open: true,
+              message: 'Please fill in all required shipping fields',
+              severity: 'error'
+            });
+            setLoading(false);
+            return;
+          }
+          
+          // If validation passes, move to next step
+          setActiveStep(prevStep => prevStep + 1);
+        } else {
+          // For other steps, just move forward
+          setActiveStep(prevStep => prevStep + 1);
+        }
+      }
+    } catch (err) {
+      console.error('Error during checkout:', err);
+      setSnackbar({
+        open: true,
+        message: err.message || 'Error completing order',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   
   const handleBack = () => {
     setActiveStep(prevStep => prevStep - 1);
@@ -532,163 +656,233 @@ const handleNext = async () => {
           
           {/* Shipping step (simplified for demo) */}
           {activeStep === 1 && (
-            <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
-              <Typography variant="h5" gutterBottom>
-                Shipping Information
-              </Typography>
-              <Alert severity="info" sx={{ mb: 4 }}>
-                This is a simplified checkout demo. In a real application, you would include forms for collecting shipping information.
-              </Alert>
-              
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    required
-                    label="Full Name"
-                    fullWidth
-                    variant="outlined"
-                    defaultValue={authState.user?.profile?.firstName ? `${authState.user.profile.firstName} ${authState.user.profile.lastName}` : ''}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    required
-                    label="Email"
-                    fullWidth
-                    variant="outlined"
-                    defaultValue={authState.user?.email || ''}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    required
-                    label="Address"
-                    fullWidth
-                    variant="outlined"
-                    defaultValue={authState.user?.profile?.address || ''}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    required
-                    label="City"
-                    fullWidth
-                    variant="outlined"
-                  />
-                </Grid>
-                <Grid item xs={12} md={3}>
-                  <TextField
-                    required
-                    label="State"
-                    fullWidth
-                    variant="outlined"
-                  />
-                </Grid>
-                <Grid item xs={12} md={3}>
-                  <TextField
-                    required
-                    label="Zip"
-                    fullWidth
-                    variant="outlined"
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    label="Phone Number"
-                    fullWidth
-                    variant="outlined"
-                    defaultValue={authState.user?.profile?.phone || ''}
-                  />
-                </Grid>
-              </Grid>
-              
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-                <Button
-                  variant="outlined"
-                  onClick={handleBack}
-                  startIcon={<ArrowBackIcon />}
-                >
-                  Back to Cart
-                </Button>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleNext}
-                  endIcon={loading ? <CircularProgress size={20} color="inherit" /> : <ArrowForwardIcon />}
-                  disabled={loading}
-                >
-                  {loading ? 'Processing...' : 'Continue to Payment'}
-                </Button>
-              </Box>
-            </Paper>
-          )}
+  <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
+    <Typography variant="h5" gutterBottom>
+      Shipping Information
+    </Typography>
+    
+    <Grid container spacing={3}>
+      <Grid item xs={12} md={6}>
+        <TextField
+          required
+          label="First Name"
+          fullWidth
+          variant="outlined"
+          name="firstName"
+          value={shippingData.firstName}
+          onChange={handleShippingInputChange}
+          error={shippingData.firstName.trim() === ''}
+          helperText={shippingData.firstName.trim() === '' ? 'First name is required' : ''}
+        />
+      </Grid>
+      <Grid item xs={12} md={6}>
+        <TextField
+          required
+          label="Last Name"
+          fullWidth
+          variant="outlined"
+          name="lastName"
+          value={shippingData.lastName}
+          onChange={handleShippingInputChange}
+          error={shippingData.lastName.trim() === ''}
+          helperText={shippingData.lastName.trim() === '' ? 'Last name is required' : ''}
+        />
+      </Grid>
+      <Grid item xs={12}>
+        <TextField
+          required
+          label="Email"
+          fullWidth
+          variant="outlined"
+          value={authState.user?.email || ''}
+          disabled
+        />
+      </Grid>
+      <Grid item xs={12}>
+        <TextField
+          required
+          label="Address"
+          fullWidth
+          variant="outlined"
+          name="address"
+          value={shippingData.address}
+          onChange={handleShippingInputChange}
+          error={shippingData.address.trim() === ''}
+          helperText={shippingData.address.trim() === '' ? 'Address is required' : ''}
+        />
+      </Grid>
+      <Grid item xs={12} md={6}>
+        <TextField
+          required
+          label="City"
+          fullWidth
+          variant="outlined"
+          name="city"
+          value={shippingData.city}
+          onChange={handleShippingInputChange}
+          error={shippingData.city.trim() === ''}
+          helperText={shippingData.city.trim() === '' ? 'City is required' : ''}
+        />
+      </Grid>
+      <Grid item xs={12} md={3}>
+        <TextField
+          required
+          label="State"
+          fullWidth
+          variant="outlined"
+          name="state"
+          value={shippingData.state}
+          onChange={handleShippingInputChange}
+          error={shippingData.state.trim() === ''}
+          helperText={shippingData.state.trim() === '' ? 'State is required' : ''}
+        />
+      </Grid>
+      <Grid item xs={12} md={3}>
+        <TextField
+          required
+          label="Zip"
+          fullWidth
+          variant="outlined"
+          name="zipCode"
+          value={shippingData.zipCode}
+          onChange={handleShippingInputChange}
+          error={shippingData.zipCode.trim() === ''}
+          helperText={shippingData.zipCode.trim() === '' ? 'Zip code is required' : ''}
+        />
+      </Grid>
+      <Grid item xs={12}>
+        <TextField
+          label="Phone Number"
+          fullWidth
+          variant="outlined"
+          name="phone"
+          value={shippingData.phone}
+          onChange={handleShippingInputChange}
+        />
+      </Grid>
+    </Grid>
+    
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+      <Button
+        variant="outlined"
+        onClick={handleBack}
+        startIcon={<ArrowBackIcon />}
+      >
+        Back to Cart
+      </Button>
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={handleNext}
+        endIcon={loading ? <CircularProgress size={20} color="inherit" /> : <ArrowForwardIcon />}
+        disabled={loading}
+      >
+        {loading ? 'Processing...' : 'Continue to Payment'}
+      </Button>
+    </Box>
+  </Paper>
+)}
           
           {/* Payment step (simplified for demo) */}
-          {activeStep === 2 && (
-            <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
-              <Typography variant="h5" gutterBottom>
-                Payment Information
-              </Typography>
-              <Alert severity="info" sx={{ mb: 4 }}>
-                This is a simplified checkout demo. In a real application, you would include forms for collecting payment information.
-              </Alert>
-              
-              <Grid container spacing={3}>
-                <Grid item xs={12}>
-                  <TextField
-                    required
-                    label="Name on Card"
-                    fullWidth
-                    variant="outlined"
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    required
-                    label="Card Number"
-                    fullWidth
-                    variant="outlined"
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    required
-                    label="Expiration Date"
-                    fullWidth
-                    variant="outlined"
-                    placeholder="MM/YY"
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    required
-                    label="CVV"
-                    fullWidth
-                    variant="outlined"
-                  />
-                </Grid>
-              </Grid>
-              
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-                <Button
-                  variant="outlined"
-                  onClick={handleBack}
-                  startIcon={<ArrowBackIcon />}
-                >
-                  Back to Shipping
-                </Button>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleNext}
-                  endIcon={loading ? <CircularProgress size={20} color="inherit" /> : <CheckCircleIcon />}
-                  disabled={loading}
-                >
-                  {loading ? 'Processing...' : 'Complete Order'}
-                </Button>
-              </Box>
-            </Paper>
-          )}
+          {/* Payment step - with form inputs connected to state */}
+{activeStep === 2 && (
+  <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
+    <Typography variant="h5" gutterBottom>
+      Payment Information
+    </Typography>
+    
+    <Grid container spacing={3}>
+      <Grid item xs={12}>
+        <TextField
+          required
+          label="Name on Card"
+          fullWidth
+          variant="outlined"
+          name="cardName"
+          value={paymentData.cardName}
+          onChange={handlePaymentInputChange}
+          error={paymentData.cardName.trim() === ''}
+          helperText={paymentData.cardName.trim() === '' ? 'Name on card is required' : ''}
+        />
+      </Grid>
+      <Grid item xs={12}>
+        <TextField
+          required
+          label="Card Number"
+          fullWidth
+          variant="outlined"
+          name="cardNumber"
+          value={paymentData.cardNumber}
+          onChange={handlePaymentInputChange}
+          error={paymentData.cardNumber.trim() === ''}
+          helperText={paymentData.cardNumber.trim() === '' ? 'Card number is required' : ''}
+          inputProps={{
+            maxLength: 16,
+            pattern: '[0-9]*'
+          }}
+        />
+      </Grid>
+      <Grid item xs={12} md={6}>
+        <TextField
+          required
+          label="Expiration Date"
+          fullWidth
+          variant="outlined"
+          placeholder="MM/YY"
+          name="expirationDate"
+          value={paymentData.expirationDate}
+          onChange={handlePaymentInputChange}
+          error={paymentData.expirationDate.trim() === ''}
+          helperText={paymentData.expirationDate.trim() === '' ? 'Expiration date is required' : ''}
+        />
+      </Grid>
+      <Grid item xs={12} md={6}>
+        <TextField
+          required
+          label="CVV"
+          fullWidth
+          variant="outlined"
+          name="cvv"
+          value={paymentData.cvv}
+          onChange={handlePaymentInputChange}
+          error={paymentData.cvv.trim() === ''}
+          helperText={paymentData.cvv.trim() === '' ? 'CVV is required' : ''}
+          inputProps={{
+            maxLength: 4,
+            pattern: '[0-9]*'
+          }}
+        />
+      </Grid>
+    </Grid>
+    
+    <Box sx={{ mt: 4 }}>
+      <Alert severity="info" sx={{ mb: 3 }}>
+        <Typography variant="body2">
+          This is a demo application. No real payment will be processed.
+        </Typography>
+      </Alert>
+    </Box>
+    
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+      <Button
+        variant="outlined"
+        onClick={handleBack}
+        startIcon={<ArrowBackIcon />}
+      >
+        Back to Shipping
+      </Button>
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={handleNext}
+        endIcon={loading ? <CircularProgress size={20} color="inherit" /> : <CheckCircleIcon />}
+        disabled={loading}
+      >
+        {loading ? 'Processing...' : 'Complete Order'}
+      </Button>
+    </Box>
+  </Paper>
+)}
           
           {/* Confirmation step */}
           {activeStep === 3 && (

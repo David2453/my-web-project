@@ -1,16 +1,54 @@
 // frontend/src/components/layout/Navbar.js
-import React, { useContext, useRef, useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import './Navbar.css';
+
+// Material UI imports
+import {
+  AppBar,
+  Box,
+  Toolbar,
+  IconButton,
+  Typography,
+  Menu,
+  Container,
+  Avatar,
+  Button,
+  Tooltip,
+  MenuItem,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  Divider,
+  Badge,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Snackbar,
+  Alert
+} from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import LogoutIcon from '@mui/icons-material/Logout';
+import PersonIcon from '@mui/icons-material/Person';
+import DirectionsBikeIcon from '@mui/icons-material/DirectionsBike';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import DashboardIcon from '@mui/icons-material/Dashboard';
 
 function Navbar() {
   const { authState, logout } = useContext(AuthContext);
   const { isAuthenticated, user } = authState;
   const navigate = useNavigate();
-  const navbarCollapseRef = useRef(null);
+  
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [userMenuAnchor, setUserMenuAnchor] = useState(null);
 
   // Close toast after 3 seconds
   useEffect(() => {
@@ -25,6 +63,7 @@ function Navbar() {
 
   const handleLogoutClick = () => {
     setShowLogoutConfirm(true);
+    setUserMenuAnchor(null);
   };
 
   const confirmLogout = () => {
@@ -38,167 +77,339 @@ function Navbar() {
     setShowLogoutConfirm(false);
   };
 
-  // Function to close mobile navbar after clicking a link
-  const closeNavbar = () => {
-    if (window.innerWidth < 992) { // Bootstrap lg breakpoint
-      if (navbarCollapseRef.current && navbarCollapseRef.current.classList.contains('show')) {
-        // Get the navbar toggler button and click it to close the navbar
-        document.querySelector('.navbar-toggler')?.click();
-      }
-    }
-  };
-
-  // Navigation handler to ensure route changes work correctly
+  // Navigation handler
   const handleNavigation = (path) => {
-    closeNavbar();
+    setMobileDrawerOpen(false);
+    setUserMenuAnchor(null);
     navigate(path);
   };
 
-  const guestLinks = (
-    <>
-      <li className="nav-item">
-        <Link className="nav-link" to="/login" onClick={() => handleNavigation('/login')}>Login</Link>
-      </li>
-      <li className="nav-item">
-        <Link className="nav-link" to="/register" onClick={() => handleNavigation('/register')}>Register</Link>
-      </li>
-    </>
-  );
+  // User menu handlers
+  const handleUserMenuOpen = (event) => {
+    setUserMenuAnchor(event.currentTarget);
+  };
 
-  const authLinks = (
-    <>
-      {user && user.role === 'admin' && (
-        <li className="nav-item">
-          <Link className="nav-link" to="/admin" onClick={() => handleNavigation('/admin')}>Admin Panel</Link>
-        </li>
-      )}
-      <li className="nav-item">
-        <Link className="nav-link" to="/dashboard" onClick={() => handleNavigation('/dashboard')}>Dashboard</Link>
-      </li>
-      <li className="nav-item">
-        <Link className="nav-link" to="/cart" onClick={() => handleNavigation('/cart')}>
-          <i className="bi bi-cart"></i> Cart
-        </Link>
-      </li>
-      <li className="nav-item dropdown">
-        <a 
-          className="nav-link dropdown-toggle" 
-          href="#" 
-          id="navbarDropdown" 
-          role="button" 
-          data-bs-toggle="dropdown" 
-          aria-expanded="false"
-        >
-          <span className="user-avatar">{user && user.username ? user.username.charAt(0).toUpperCase() : ''}</span>
-          {user && user.username}
-        </a>
-        <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-          <li><Link className="dropdown-item" to="/profile" onClick={() => handleNavigation('/profile')}>Profile</Link></li>
-          <li><hr className="dropdown-divider" /></li>
-          <li>
-            <button className="dropdown-item logout-btn" onClick={handleLogoutClick}>
-              <i className="bi bi-box-arrow-right"></i> Logout
-            </button>
-          </li>
-        </ul>
-      </li>
-    </>
+  const handleUserMenuClose = () => {
+    setUserMenuAnchor(null);
+  };
+
+  const navLinks = [
+    { title: 'Home', path: '/' },
+    { title: 'Bikes', path: '/bikes' },
+    { title: 'Shop', path: '/shop' },
+    { title: 'Rentals', path: '/rentals' }
+  ];
+
+  // Drawer content for mobile view
+  const drawerContent = (
+    <Box sx={{ width: 250 }} role="presentation">
+      <Box sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
+        <DirectionsBikeIcon sx={{ mr: 1 }} />
+        <Typography variant="h6" component="div">
+          Bike Rent & Shop
+        </Typography>
+      </Box>
+      <Divider />
+      <List>
+        {navLinks.map((link) => (
+          <ListItem key={link.path} disablePadding>
+            <ListItemButton onClick={() => handleNavigation(link.path)}>
+              <ListItemText primary={link.title} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+      <Divider />
+      <List>
+        {!isAuthenticated ? (
+          <>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleNavigation('/login')}>
+                <ListItemText primary="Login" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleNavigation('/register')}>
+                <ListItemText primary="Register" />
+              </ListItemButton>
+            </ListItem>
+          </>
+        ) : (
+          <>
+            {user && user.role === 'admin' && (
+              <ListItem disablePadding>
+                <ListItemButton onClick={() => handleNavigation('/admin')}>
+                  <AdminPanelSettingsIcon sx={{ mr: 1 }} />
+                  <ListItemText primary="Admin Panel" />
+                </ListItemButton>
+              </ListItem>
+            )}
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleNavigation('/dashboard')}>
+                <DashboardIcon sx={{ mr: 1 }} />
+                <ListItemText primary="Dashboard" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleNavigation('/profile')}>
+                <PersonIcon sx={{ mr: 1 }} />
+                <ListItemText primary="Profile" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleNavigation('/cart')}>
+                <ShoppingCartIcon sx={{ mr: 1 }} />
+                <ListItemText primary="Cart" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={handleLogoutClick}>
+                <LogoutIcon sx={{ mr: 1 }} color="error" />
+                <ListItemText primary="Logout" sx={{ color: 'error.main' }} />
+              </ListItemButton>
+            </ListItem>
+          </>
+        )}
+      </List>
+    </Box>
   );
 
   return (
     <>
-      <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div className="container">
-          <Link className="navbar-brand" to="/" onClick={() => handleNavigation('/')}>Bike Rent & Shop</Link>
-          <button 
-            className="navbar-toggler" 
-            type="button" 
-            data-bs-toggle="collapse" 
-            data-bs-target="#navbarNav"
-            aria-controls="navbarNav"
-            aria-expanded="false"
-            aria-label="Toggle navigation"
-          >
-            <span className="navbar-toggler-icon"></span>
-          </button>
-          <div className="collapse navbar-collapse" id="navbarNav" ref={navbarCollapseRef}>
-            <ul className="navbar-nav main-nav me-auto">
-              <li className="nav-item">
-                <Link className="nav-link" to="/" onClick={() => handleNavigation('/')}>Home</Link>
-              </li>
-              <li className="nav-item">
-                <Link className="nav-link" to="/bikes" onClick={() => handleNavigation('/bikes')}>Bikes</Link>
-              </li>
-              <li className="nav-item">
-                <Link className="nav-link" to="/shop" onClick={() => handleNavigation('/shop')}>Shop</Link>
-              </li>
-              <li className="nav-item">
-                <Link className="nav-link" to="/rentals" onClick={() => handleNavigation('/rentals')}>Rentals</Link>
-              </li>
-            </ul>
-            <ul className="navbar-nav auth-nav">
-              {isAuthenticated ? authLinks : guestLinks}
-            </ul>
-          </div>
-        </div>
-      </nav>
+      <AppBar position="sticky" className="navbar" sx={{ backgroundColor: '#212529 !important' }}>
+        <Container maxWidth="xl">
+          <Toolbar disableGutters sx={{ justifyContent: 'space-between' }}>
+            {/* Mobile menu icon */}
+            <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
+              <IconButton
+                size="large"
+                edge="start"
+                color="inherit"
+                aria-label="menu"
+                onClick={() => setMobileDrawerOpen(true)}
+              >
+                <MenuIcon />
+              </IconButton>
+            </Box>
 
-      {/* Logout Confirmation Modal */}
-      {showLogoutConfirm && (
-        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }} tabIndex="-1">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Confirm Logout</h5>
-                <button 
-                  type="button" 
-                  className="btn-close" 
-                  onClick={cancelLogout}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <p>Are you sure you want to log out?</p>
-              </div>
-              <div className="modal-footer">
-                <button 
-                  type="button" 
-                  className="btn btn-secondary" 
-                  onClick={cancelLogout}
+            {/* Logo */}
+            <Typography
+              variant="h6"
+              component={Link}
+              to="/"
+              onClick={() => handleNavigation('/')}
+              sx={{
+                mr: 2,
+                fontWeight: 700,
+                color: 'inherit',
+                textDecoration: 'none',
+                display: 'flex',
+                alignItems: 'center'
+              }}
+              className="navbar-brand"
+            >
+              <DirectionsBikeIcon sx={{ mr: 1, display: { xs: 'none', sm: 'flex' } }} />
+              Bike Rent & Shop
+            </Typography>
+
+            {/* Desktop navigation links */}
+            <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, ml: 2 }} className="main-nav">
+              {navLinks.map((link) => (
+                <Button
+                  key={link.path}
+                  component={Link}
+                  to={link.path}
+                  onClick={() => handleNavigation(link.path)}
+                  sx={{ 
+                    color: 'white', 
+                    mx: 0.5,
+                    borderRadius: '4px',
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                    }
+                  }}
+                  className="nav-link"
                 >
-                  Cancel
-                </button>
-                <button 
-                  type="button" 
-                  className="btn btn-primary" 
-                  onClick={confirmLogout}
-                >
-                  Logout
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+                  {link.title}
+                </Button>
+              ))}
+            </Box>
+
+            {/* Desktop auth links */}
+            <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }} className="auth-nav">
+              {!isAuthenticated ? (
+                // Guest links
+                <>
+                  <Button 
+                    color="inherit" 
+                    component={Link} 
+                    to="/login" 
+                    onClick={() => handleNavigation('/login')}
+                    sx={{ ml: 1 }}
+                    className="nav-link"
+                  >
+                    Login
+                  </Button>
+                  <Button 
+                    color="primary" 
+                    variant="contained" 
+                    component={Link} 
+                    to="/register" 
+                    onClick={() => handleNavigation('/register')}
+                    sx={{ ml: 1 }}
+                    className="nav-link"
+                  >
+                    Register
+                  </Button>
+                </>
+              ) : (
+                // Auth links
+                <>
+                  {user && user.role === 'admin' && (
+                    <Button
+                      color="inherit"
+                      startIcon={<AdminPanelSettingsIcon />}
+                      component={Link}
+                      to="/admin"
+                      onClick={() => handleNavigation('/admin')}
+                      sx={{ ml: 1 }}
+                      className="nav-link"
+                    >
+                      Admin
+                    </Button>
+                  )}
+                  <Button
+                    color="inherit"
+                    startIcon={<DashboardIcon />}
+                    component={Link}
+                    to="/dashboard"
+                    onClick={() => handleNavigation('/dashboard')}
+                    sx={{ ml: 1 }}
+                    className="nav-link"
+                  >
+                    Dashboard
+                  </Button>
+                  <IconButton
+                    color="inherit"
+                    component={Link}
+                    to="/cart"
+                    onClick={() => handleNavigation('/cart')}
+                    sx={{ ml: 1 }}
+                    className="nav-link"
+                  >
+                    <Badge badgeContent={0} color="error">
+                      <ShoppingCartIcon />
+                    </Badge>
+                  </IconButton>
+                  
+                  <Box sx={{ ml: 1 }}>
+                    <Tooltip title="Account settings">
+                      <IconButton
+                        onClick={handleUserMenuOpen}
+                        sx={{ p: 0, ml: 1 }}
+                        aria-controls={Boolean(userMenuAnchor) ? 'user-menu' : undefined}
+                        aria-haspopup="true"
+                        aria-expanded={Boolean(userMenuAnchor) ? 'true' : undefined}
+                      >
+                        <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: '0.9rem' }}>
+                          {user && user.username ? user.username.charAt(0).toUpperCase() : ''}
+                        </Avatar>
+                      </IconButton>
+                    </Tooltip>
+                    <Menu
+                      id="user-menu"
+                      anchorEl={userMenuAnchor}
+                      open={Boolean(userMenuAnchor)}
+                      onClose={handleUserMenuClose}
+                      PaperProps={{
+                        elevation: 3,
+                        sx: {
+                          overflow: 'visible',
+                          filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.2))',
+                          mt: 1.5,
+                          '& .MuiAvatar-root': {
+                            width: 32,
+                            height: 32,
+                            ml: -0.5,
+                            mr: 1,
+                          }
+                        },
+                      }}
+                      transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                      anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                    >
+                      <MenuItem onClick={() => handleNavigation('/profile')}>
+                        <PersonIcon sx={{ mr: 1.5 }} /> Profile
+                      </MenuItem>
+                      <Divider />
+                      <MenuItem onClick={handleLogoutClick} sx={{ color: 'error.main' }}>
+                        <LogoutIcon sx={{ mr: 1.5 }} /> Logout
+                      </MenuItem>
+                    </Menu>
+                  </Box>
+                </>
+              )}
+            </Box>
+          </Toolbar>
+        </Container>
+      </AppBar>
+
+      {/* Mobile Navigation Drawer */}
+      <Drawer
+        anchor="left"
+        open={mobileDrawerOpen}
+        onClose={() => setMobileDrawerOpen(false)}
+      >
+        {drawerContent}
+      </Drawer>
+
+      {/* Logout Confirmation Dialog */}
+      <Dialog
+        open={showLogoutConfirm}
+        onClose={cancelLogout}
+        aria-labelledby="logout-dialog-title"
+        aria-describedby="logout-dialog-description"
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            boxShadow: '0 5px 15px rgba(0, 0, 0, 0.2)'
+          }
+        }}
+      >
+        <DialogTitle id="logout-dialog-title">
+          Confirm Logout
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="logout-dialog-description">
+            Are you sure you want to log out?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={cancelLogout} color="inherit">
+            Cancel
+          </Button>
+          <Button onClick={confirmLogout} variant="contained" color="primary" autoFocus>
+            Logout
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Toast Notification */}
-      {showToast && (
-        <div className="position-fixed bottom-0 end-0 p-3" style={{ zIndex: 11 }}>
-          <div className="toast show" role="alert" aria-live="assertive" aria-atomic="true">
-            <div className="toast-header">
-              <strong className="me-auto">Bike Rent & Shop</strong>
-              <button 
-                type="button" 
-                className="btn-close" 
-                onClick={() => setShowToast(false)}
-              ></button>
-            </div>
-            <div className="toast-body">
-              <i className="bi bi-check-circle-fill text-success me-2"></i>
-              You have been successfully logged out.
-            </div>
-          </div>
-        </div>
-      )}
+      <Snackbar
+        open={showToast}
+        autoHideDuration={3000}
+        onClose={() => setShowToast(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={() => setShowToast(false)} 
+          severity="success" 
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          You have been successfully logged out.
+        </Alert>
+      </Snackbar>
     </>
   );
 }

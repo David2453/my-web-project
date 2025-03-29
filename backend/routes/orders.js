@@ -51,34 +51,24 @@ router.get('/:id', auth, async (req, res) => {
     res.status(500).send('Server error');
   }
 });
-
 // @route   POST api/orders
 // @desc    Create a new order from cart
 // @access  Private
 router.post('/', auth, async (req, res) => {
-  // Start a transaction session
-  const session = await mongoose.startSession();
-  session.startTransaction();
-  
   try {
     const { shippingAddress, paymentMethod, paymentDetails } = req.body;
     
     // Validate shipping address for purchases
     if (!shippingAddress && req.body.hasPurchaseItems) {
-      await session.abortTransaction();
-      session.endSession();
       return res.status(400).json({ msg: 'Shipping address is required for purchase items' });
     }
     
     // Get cart items
     const cartItems = await CartItem.find({ user: req.user.id })
       .populate('bike')
-      .populate('location')
-      .session(session);
+      .populate('location');
     
     if (cartItems.length === 0) {
-      await session.abortTransaction();
-      session.endSession();
       return res.status(400).json({ msg: 'Cart is empty' });
     }
     
@@ -94,17 +84,15 @@ router.post('/', auth, async (req, res) => {
         itemPrice = item.bike.price * item.quantity;
         
         // Update bike stock
-        const bike = await Bike.findById(item.bike._id).session(session);
+        const bike = await Bike.findById(item.bike._id);
         if (bike.purchaseStock < item.quantity) {
-          await session.abortTransaction();
-          session.endSession();
           return res.status(400).json({ 
             msg: `Not enough stock for ${bike.name}. Available: ${bike.purchaseStock}` 
           });
         }
         
         bike.purchaseStock -= item.quantity;
-        await bike.save({ session });
+        await bike.save();
       } else {
         // For rentals, calculate based on days
         const startDate = new Date(item.startDate);
@@ -113,21 +101,19 @@ router.post('/', auth, async (req, res) => {
         itemPrice = item.bike.rentalPrice * days;
         
         // Update rental inventory
-        const bike = await Bike.findById(item.bike._id).session(session);
+        const bike = await Bike.findById(item.bike._id);
         const locationInventory = bike.rentalInventory.find(
           inventory => inventory.location.toString() === item.location._id.toString()
         );
         
         if (!locationInventory || locationInventory.stock < 1) {
-          await session.abortTransaction();
-          session.endSession();
           return res.status(400).json({ 
             msg: `${bike.name} is not available at ${item.location.name}` 
           });
         }
         
         locationInventory.stock -= 1;
-        await bike.save({ session });
+        await bike.save();
       }
       
       subtotal += itemPrice;
@@ -161,14 +147,10 @@ router.post('/', auth, async (req, res) => {
       total
     });
     
-    const order = await newOrder.save({ session });
+    const order = await newOrder.save();
     
     // Clear the cart
-    await CartItem.deleteMany({ user: req.user.id }).session(session);
-    
-    // Commit the transaction
-    await session.commitTransaction();
-    session.endSession();
+    await CartItem.deleteMany({ user: req.user.id });
     
     // Populate order details before returning
     const populatedOrder = await Order.findById(order._id)
@@ -177,10 +159,6 @@ router.post('/', auth, async (req, res) => {
     
     res.json(populatedOrder);
   } catch (err) {
-    // Abort the transaction on error
-    await session.abortTransaction();
-    session.endSession();
-    
     console.error('Error creating order:', err.message);
     res.status(500).send('Server error');
   }
