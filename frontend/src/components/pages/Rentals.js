@@ -7,8 +7,14 @@ function Rentals() {
   const [selectedLocation, setSelectedLocation] = useState('');
   const [locations, setLocations] = useState([]);
   const [bikes, setBikes] = useState([]);
+  const [filteredBikes, setFilteredBikes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  
+  // Get type filter from URL if it exists
+  const search = window.location.search;
+  const params = new URLSearchParams(search);
+  const typeFilter = params.get('type');
 
   // Fetch locations
 useEffect(() => {
@@ -32,29 +38,6 @@ useEffect(() => {
 
   fetchLocations();
 }, []);
-
-  // Fetch bikes when location is selected
-  useEffect(() => {
-    if (selectedLocation) {
-      const fetchBikes = async () => {
-        setLoading(true);
-        try {
-          const res = await axios.get(`/api/bikes/rental/${selectedLocation}`);
-          setBikes(res.data);
-          setError(null);
-        } catch (err) {
-          setError('Failed to load bikes. Please try again later.');
-          console.error('Error fetching bikes:', err);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      fetchBikes();
-    } else {
-      setBikes([]);
-    }
-  }, [selectedLocation]);
 
   // Rest of your component remains the same..
 

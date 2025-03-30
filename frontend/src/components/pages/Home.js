@@ -47,16 +47,24 @@ function Home() {
           <div className="row">
             {featuredBikes.map(bike => (
               <div className="col-md-4 mb-4" key={bike.id}>
-                <div className="card bike-card h-100">
+               <div className="card bike-card h-100">
                   <img src={bike.image} className="card-img-top bike-img" alt={bike.name} />
                   <div className="card-body">
                     <h2 style={{fontSize:24,color:'white' }}>{bike.type}</h2>
-                    <div className="d-flex justify-content-between align-items-center">
+                    <div className="d-flex justify-content-between align-items-center mb-3">
                       <div>
                         <p className="mb-0 bike-price"><strong>Buy:</strong> ${bike.price}</p>
                         <p className="mb-0 bike-price"><strong>Rent:</strong> ${bike.rentalPrice}/day</p>
                       </div>
                       <Link to={`/bikes/${bike.id}`} className="btn btn-sm btn-primary">View Details</Link>
+                    </div>
+                    <div className="d-flex justify-content-between mt-2">
+                      <Link to={`/shop?type=${encodeURIComponent(bike.type)}`} className="btn btn-success" style={{width: '48%'}}>
+                        Buy
+                      </Link>
+                      <Link to={`/rentals?type=${encodeURIComponent(bike.type)}`} className="btn btn-info" style={{width: '48%', color: 'white'}}>
+                        Rent
+                      </Link>
                     </div>
                   </div>
                 </div>

@@ -7,9 +7,15 @@ import { green } from '@mui/material/colors';
 
 function Shop() {
   const [bikes, setBikes] = useState([]);
+  const [filteredBikes, setFilteredBikes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  
+  // Get type filter from URL if it exists
+  const search = window.location.search;
+  const params = new URLSearchParams(search);
+  const typeFilter = params.get('type');
+  
   useEffect(() => {
     const fetchBikes = async () => {
       setLoading(true);
@@ -27,6 +33,20 @@ function Shop() {
 
     fetchBikes();
   }, []);
+  
+  // Filter bikes based on type parameter
+  useEffect(() => {
+    if (bikes.length > 0) {
+      if (typeFilter) {
+        const filtered = bikes.filter(bike => 
+          bike.type.toLowerCase() === typeFilter.toLowerCase()
+        );
+        setFilteredBikes(filtered);
+      } else {
+        setFilteredBikes(bikes);
+      }
+    }
+  }, [bikes, typeFilter]);
 
   // Rest of your component remains the same...
 
