@@ -30,7 +30,12 @@ import {
   useMediaQuery,
   Snackbar,
   Alert,
-  CircularProgress
+  CircularProgress,
+  Fade,
+  Chip,
+  Badge,
+  Tooltip,
+  InputAdornment
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -40,7 +45,13 @@ import {
   Settings as SettingsIcon,
   Edit as EditIcon,
   Save as SaveIcon,
-  Cancel as CancelIcon
+  Cancel as CancelIcon,
+  Phone as PhoneIcon,
+  Email as EmailIcon,
+  Home as HomeIcon,
+  CalendarToday as CalendarIcon,
+  CheckCircle as CheckCircleIcon,
+  ArrowBack as ArrowBackIcon
 } from '@mui/icons-material';
 
 function ProfilePage() {
@@ -170,299 +181,557 @@ function ProfilePage() {
     }
     return user?.username?.charAt(0).toUpperCase() || 'U';
   };
+  
+  // Get user's full name or username
+  const getUserDisplayName = () => {
+    if (user?.profile?.firstName && user?.profile?.lastName) {
+      return `${user.profile.firstName} ${user.profile.lastName}`;
+    }
+    return user?.username || 'User';
+  };
 
   // Close snackbar
   const handleCloseSnackbar = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
   
+  // Calculate how long the user has been a member
+  const getMembershipDuration = () => {
+    if (!user?.createdAt) return 'New member';
+    
+    const createdDate = new Date(user.createdAt);
+    const now = new Date();
+    const diffInMonths = (now.getFullYear() - createdDate.getFullYear()) * 12 + 
+                         (now.getMonth() - createdDate.getMonth());
+                         
+    if (diffInMonths < 1) return 'New member';
+    if (diffInMonths === 1) return '1 month';
+    if (diffInMonths < 12) return `${diffInMonths} months`;
+    
+    const years = Math.floor(diffInMonths / 12);
+    const remainingMonths = diffInMonths % 12;
+    
+    if (remainingMonths === 0) {
+      return years === 1 ? '1 year' : `${years} years`;
+    }
+    
+    return years === 1 
+      ? `1 year, ${remainingMonths} ${remainingMonths === 1 ? 'month' : 'months'}`
+      : `${years} years, ${remainingMonths} ${remainingMonths === 1 ? 'month' : 'months'}`;
+  };
+  
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* Breadcrumbs Navigation */}
-      <Breadcrumbs sx={{ mb: 3 }}>
-        <Link to="/" style={{ color: theme.palette.text.secondary, textDecoration: 'none' }}>
-          Home
-        </Link>
-        <Typography color="text.primary">Profile</Typography>
-      </Breadcrumbs>
+      {/* Header with breadcrumbs and back button */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Breadcrumbs>
+          <Link to="/" style={{ 
+            color: theme.palette.text.secondary, 
+            textDecoration: 'none',
+            display: 'flex',
+            alignItems: 'center' 
+          }}>
+            <HomeIcon sx={{ mr: 0.5, fontSize: 20 }} />
+            Home
+          </Link>
+          <Typography color="text.primary" sx={{ display: 'flex', alignItems: 'center' }}>
+            <PersonIcon sx={{ mr: 0.5, fontSize: 20 }} />
+            Profile
+          </Typography>
+        </Breadcrumbs>
+        
+        <Button 
+          component={Link} 
+          to="/"
+          startIcon={<ArrowBackIcon />}
+          sx={{ borderRadius: 2 }}
+        >
+          Back
+        </Button>
+      </Box>
       
       <Grid container spacing={4}>
         {/* Left Sidebar */}
-        <Grid item xs={12} md={3}>
-          <Card sx={{ mb: 3, borderRadius: 2 }}>
-            <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-              <Avatar 
+        <Grid item xs={12} md={4} lg={3}>
+            <Card 
+              elevation={4} 
+              sx={{ 
+                mb: 3, 
+                borderRadius: 3,
+                overflow: 'visible',
+                position: 'relative',
+                bgcolor: theme.palette.mode === 'dark' ? 'rgba(66, 66, 66, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+                backdropFilter: 'blur(8px)',
+                boxShadow: theme.shadows[8]
+              }}
+            >
+              <Box 
                 sx={{ 
-                  width: 100, 
                   height: 100, 
                   bgcolor: theme.palette.primary.main,
-                  fontSize: 40,
-                  mb: 2
+                  borderTopLeftRadius: 12,
+                  borderTopRightRadius: 12
                 }}
-              >
-                {getAvatarLetter()}
-              </Avatar>
-              <Typography variant="h5" gutterBottom>
-                {user?.username}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {user?.email}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Member since {new Date(user?.createdAt || Date.now()).toLocaleDateString()}
-              </Typography>
+              />
               
-              <Button 
-                variant="outlined" 
-                size="small" 
-                startIcon={<EditIcon />}
-                sx={{ mt: 2 }}
-                onClick={toggleEditing}
-              >
-                Edit Profile
-              </Button>
-            </CardContent>
-          </Card>
-          
-          <Paper elevation={2} sx={{ borderRadius: 2 }}>
-            <List component="nav" dense>
-              <ListItem 
-                button 
-                selected={tabValue === 0}
-                onClick={(e) => handleTabChange(e, 0)}
-              >
-                <ListItemIcon>
-                  <PersonIcon color={tabValue === 0 ? 'primary' : 'inherit'} />
-                </ListItemIcon>
-                <ListItemText primary="Personal Info" />
-              </ListItem>
-              
-              <ListItem 
-                button 
-                selected={tabValue === 1}
-                onClick={(e) => handleTabChange(e, 1)}
-              >
-                <ListItemIcon>
-                  <FavoriteIcon color={tabValue === 1 ? 'primary' : 'inherit'} />
-                </ListItemIcon>
-                <ListItemText primary="Favorites" />
-              </ListItem>
-              
-              <ListItem 
-                button 
-                selected={tabValue === 2}
-                onClick={(e) => handleTabChange(e, 2)}
-                component={Link}
-                to="/cart"
-              >
-                <ListItemIcon>
-                  <CartIcon color={tabValue === 2 ? 'primary' : 'inherit'} />
-                </ListItemIcon>
-                <ListItemText primary="Cart" />
-              </ListItem>
-              
-              <ListItem 
-                button 
-                selected={tabValue === 3}
-                onClick={(e) => handleTabChange(e, 3)}
-              >
-                <ListItemIcon>
-                  <HistoryIcon color={tabValue === 3 ? 'primary' : 'inherit'} />
-                </ListItemIcon>
-                <ListItemText primary="Order History" />
-              </ListItem>
-              
-              <ListItem 
-                button 
-                selected={tabValue === 4}
-                onClick={(e) => handleTabChange(e, 4)}
-              >
-                <ListItemIcon>
-                  <SettingsIcon color={tabValue === 4 ? 'primary' : 'inherit'} />
-                </ListItemIcon>
-                <ListItemText primary="Account Settings" />
-              </ListItem>
-            </List>
-          </Paper>
+              <CardContent sx={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                textAlign: 'center',
+                pt: 0,
+                mt: -6
+              }}>
+                <Badge
+                  overlap="circular"
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                >
+                  <Avatar 
+                    sx={{ 
+                      width: 120, 
+                      height: 120, 
+                      bgcolor: theme.palette.primary.main,
+                      fontSize: 48,
+                      mb: 2,
+                      border: `4px solid ${theme.palette.background.paper}`,
+                      boxShadow: theme.shadows[4]
+                    }}
+                  >
+                    {getAvatarLetter()}
+                  </Avatar>
+                </Badge>
+                
+                <Typography variant="h5" gutterBottom fontWeight="bold">
+                  {getUserDisplayName()}
+                </Typography>
+                
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary"
+                  sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    justifyContent: 'center', 
+                    gap: 0.5 
+                  }}
+                >
+                  <EmailIcon fontSize="small" />
+                  {user?.email}
+                </Typography>
+                
+                <Chip
+                  icon={<CalendarIcon fontSize="small" />}
+                  label={`Member for ${getMembershipDuration()}`}
+                  variant="outlined"
+                  size="small"
+                  sx={{ mt: 1 }}
+                />
+                
+                <Button 
+                  variant="contained" 
+                  startIcon={<EditIcon />}
+                  sx={{ mt: 3, borderRadius: 2, px: 3 }}
+                  onClick={toggleEditing}
+                  disabled={editing}
+                >
+                  Edit Profile
+                </Button>
+              </CardContent>
+            </Card>
+            
+            <Paper 
+              elevation={3} 
+              sx={{ 
+                borderRadius: 3,
+                overflow: 'hidden',
+                bgcolor: theme.palette.mode === 'dark' ? 'rgba(66, 66, 66, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                backdropFilter: 'blur(8px)'
+              }}
+            >
+              <List component="nav">
+                {[
+                  { icon: <PersonIcon />, label: "Personal Info", value: 0 },
+                  { icon: <FavoriteIcon />, label: "Favorites", value: 1 },
+                  { icon: <CartIcon />, label: "Cart", value: 2, link: "/cart" },
+                  { icon: <HistoryIcon />, label: "Order History", value: 3 },
+                  { icon: <SettingsIcon />, label: "Account Settings", value: 4 }
+                ].map((item, index) => (
+                  <ListItem
+                    key={index}
+                    button
+                    selected={tabValue === item.value}
+                    onClick={(e) => handleTabChange(e, item.value)}
+                    component={item.link ? Link : 'div'}
+                    to={item.link}
+                    sx={{
+                      borderLeft: tabValue === item.value 
+                        ? `4px solid ${theme.palette.primary.main}` 
+                        : '4px solid transparent',
+                      py: 1.5,
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        bgcolor: theme.palette.action.hover,
+                        transform: 'translateX(4px)'
+                      }
+                    }}
+                  >
+                    <ListItemIcon>
+                      {React.cloneElement(item.icon, { 
+                        color: tabValue === item.value ? 'primary' : 'inherit',
+                        sx: { transition: 'all 0.2s' }
+                      })}
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary={
+                        <Typography 
+                          variant="body1" 
+                          fontWeight={tabValue === item.value ? 'bold' : 'regular'}
+                        >
+                          {item.label}
+                        </Typography>
+                      } 
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </Paper>
         </Grid>
         
         {/* Main Content */}
-        <Grid item xs={12} md={9}>
-          <Paper 
-            elevation={3} 
-            sx={{ 
-              p: 3, 
-              borderRadius: 2,
-              minHeight: 500
-            }}
-          >
-            {/* Personal Info Tab */}
-            {tabValue === 0 && (
-              <Box>
-                <Typography variant="h5" component="h2" fontWeight="bold" gutterBottom>
-                  <PersonIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                  Personal Information
-                </Typography>
-                <Divider sx={{ mb: 3 }} />
-                
-                {editing ? (
-                  <Box component="form" onSubmit={handleSubmit}>
-                    <Grid container spacing={3}>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          label="First Name"
-                          name="firstName"
-                          value={profileData.firstName}
-                          onChange={handleInputChange}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          label="Last Name"
-                          name="lastName"
-                          value={profileData.lastName}
-                          onChange={handleInputChange}
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <TextField
-                          fullWidth
-                          label="Email Address"
-                          name="email"
-                          value={profileData.email}
-                          onChange={handleInputChange}
-                          disabled
-                          helperText="Email cannot be changed"
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <TextField
-                          fullWidth
-                          label="Phone Number"
-                          name="phone"
-                          value={profileData.phone}
-                          onChange={handleInputChange}
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <TextField
-                          fullWidth
-                          label="Address"
-                          name="address"
-                          value={profileData.address}
-                          onChange={handleInputChange}
-                          multiline
-                          rows={3}
-                        />
-                      </Grid>
-                    </Grid>
-                    
-                    <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                      <Button
-                        variant="outlined"
-                        startIcon={<CancelIcon />}
-                        onClick={toggleEditing}
-                        disabled={loading}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        type="submit"
-                        variant="contained"
-                        color="primary"
-                        startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
-                        disabled={loading}
-                      >
-                        {loading ? 'Saving...' : 'Save Changes'}
-                      </Button>
-                    </Box>
-                  </Box>
-                ) : (
+        <Grid item xs={12} md={8} lg={9}>
+            <Paper 
+              elevation={3} 
+              sx={{ 
+                p: 4, 
+                borderRadius: 3,
+                minHeight: 500,
+                position: 'relative',
+                bgcolor: theme.palette.mode === 'dark' ? 'rgba(66, 66, 66, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                backdropFilter: 'blur(8px)',
+                boxShadow: theme.shadows[8]
+              }}
+            >
+              {/* Personal Info Tab */}
+              {tabValue === 0 && (
                   <Box>
-                    <Grid container spacing={3}>
-                      <Grid item xs={12} sm={6}>
-                        <Typography variant="body2" color="text.secondary">
-                          First Name
-                        </Typography>
-                        <Typography variant="body1" sx={{ mb: 2 }}>
-                          {user?.profile?.firstName || 'Not provided'}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <Typography variant="body2" color="text.secondary">
-                          Last Name
-                        </Typography>
-                        <Typography variant="body1" sx={{ mb: 2 }}>
-                          {user?.profile?.lastName || 'Not provided'}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12}>
-                        <Typography variant="body2" color="text.secondary">
-                          Email Address
-                        </Typography>
-                        <Typography variant="body1" sx={{ mb: 2 }}>
-                          {user?.email}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12}>
-                        <Typography variant="body2" color="text.secondary">
-                          Phone Number
-                        </Typography>
-                        <Typography variant="body1" sx={{ mb: 2 }}>
-                          {user?.profile?.phone || 'Not provided'}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12}>
-                        <Typography variant="body2" color="text.secondary">
-                          Address
-                        </Typography>
-                        <Typography variant="body1" sx={{ mb: 2 }}>
-                          {user?.profile?.address || 'Not provided'}
-                        </Typography>
-                      </Grid>
-                    </Grid>
+                    <Typography 
+                      variant="h5" 
+                      component="h2" 
+                      fontWeight="bold" 
+                      gutterBottom
+                      sx={{ 
+                        display: 'flex',
+                        alignItems: 'center',
+                        color: theme.palette.primary.main
+                      }}
+                    >
+                      <PersonIcon sx={{ mr: 1 }} />
+                      Personal Information
+                    </Typography>
                     
-                    <Box sx={{ mt: 3 }}>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        startIcon={<EditIcon />}
-                        onClick={toggleEditing}
-                      >
-                        Edit Profile
-                      </Button>
-                    </Box>
+                    <Divider sx={{ mb: 4, borderColor: theme.palette.divider }} />
+                    
+                    {editing ? (
+                      <Box component="form" onSubmit={handleSubmit}>
+                        <Grid container spacing={3}>
+                          <Grid item xs={12} sm={6}>
+                            <TextField
+                              fullWidth
+                              label="First Name"
+                              name="firstName"
+                              value={profileData.firstName}
+                              onChange={handleInputChange}
+                              variant="outlined"
+                              InputProps={{
+                                startAdornment: (
+                                  <InputAdornment position="start">
+                                    <PersonIcon color="action" />
+                                  </InputAdornment>
+                                ),
+                              }}
+                              sx={{ 
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: 2
+                                }
+                              }}
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <TextField
+                              fullWidth
+                              label="Last Name"
+                              name="lastName"
+                              value={profileData.lastName}
+                              onChange={handleInputChange}
+                              variant="outlined"
+                              InputProps={{
+                                startAdornment: (
+                                  <InputAdornment position="start">
+                                    <PersonIcon color="action" />
+                                  </InputAdornment>
+                                ),
+                              }}
+                              sx={{ 
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: 2
+                                }
+                              }}
+                            />
+                          </Grid>
+                          <Grid item xs={12}>
+                            <TextField
+                              fullWidth
+                              label="Email Address"
+                              name="email"
+                              value={profileData.email}
+                              onChange={handleInputChange}
+                              disabled
+                              helperText="Email cannot be changed"
+                              variant="outlined"
+                              InputProps={{
+                                startAdornment: (
+                                  <InputAdornment position="start">
+                                    <EmailIcon color="action" />
+                                  </InputAdornment>
+                                ),
+                              }}
+                              sx={{ 
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: 2
+                                }
+                              }}
+                            />
+                          </Grid>
+                          <Grid item xs={12}>
+                            <TextField
+                              fullWidth
+                              label="Phone Number"
+                              name="phone"
+                              value={profileData.phone}
+                              onChange={handleInputChange}
+                              variant="outlined"
+                              InputProps={{
+                                startAdornment: (
+                                  <InputAdornment position="start">
+                                    <PhoneIcon color="action" />
+                                  </InputAdornment>
+                                ),
+                              }}
+                              sx={{ 
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: 2
+                                }
+                              }}
+                            />
+                          </Grid>
+                          <Grid item xs={12}>
+                            <TextField
+                              fullWidth
+                              label="Address"
+                              name="address"
+                              value={profileData.address}
+                              onChange={handleInputChange}
+                              multiline
+                              rows={3}
+                              variant="outlined"
+                              InputProps={{
+                                startAdornment: (
+                                  <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1.5 }}>
+                                    <HomeIcon color="action" />
+                                  </InputAdornment>
+                                ),
+                              }}
+                              sx={{ 
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: 2
+                                }
+                              }}
+                            />
+                          </Grid>
+                        </Grid>
+                        
+                        <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                          <Button
+                            variant="outlined"
+                            startIcon={<CancelIcon />}
+                            onClick={toggleEditing}
+                            disabled={loading}
+                            sx={{ borderRadius: 2 }}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            type="submit"
+                            variant="contained"
+                            color="primary"
+                            startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+                            disabled={loading}
+                            sx={{ borderRadius: 2 }}
+                          >
+                            {loading ? 'Saving...' : 'Save Changes'}
+                          </Button>
+                        </Box>
+                      </Box>
+                    ) : (
+                      <Box>
+                        <Grid container spacing={4}>
+                          <Grid item xs={12} sm={6}>
+                            <Card elevation={2} sx={{ borderRadius: 2, height: '100%' }}>
+                              <CardContent>
+                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                                  <PersonIcon color="primary" sx={{ mr: 1 }} />
+                                  <Typography variant="subtitle1" fontWeight="medium">
+                                    First Name
+                                  </Typography>
+                                </Box>
+                                <Typography variant="h6">
+                                  {user?.profile?.firstName || 'Not provided'}
+                                </Typography>
+                              </CardContent>
+                            </Card>
+                          </Grid>
+                          
+                          <Grid item xs={12} sm={6}>
+                            <Card elevation={2} sx={{ borderRadius: 2, height: '100%' }}>
+                              <CardContent>
+                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                                  <PersonIcon color="primary" sx={{ mr: 1 }} />
+                                  <Typography variant="subtitle1" fontWeight="medium">
+                                    Last Name
+                                  </Typography>
+                                </Box>
+                                <Typography variant="h6">
+                                  {user?.profile?.lastName || 'Not provided'}
+                                </Typography>
+                              </CardContent>
+                            </Card>
+                          </Grid>
+                          
+                          <Grid item xs={12}>
+                            <Card elevation={2} sx={{ borderRadius: 2 }}>
+                              <CardContent>
+                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                                  <EmailIcon color="primary" sx={{ mr: 1 }} />
+                                  <Typography variant="subtitle1" fontWeight="medium">
+                                    Email Address
+                                  </Typography>
+                                </Box>
+                                <Typography variant="h6">
+                                  {user?.email}
+                                </Typography>
+                              </CardContent>
+                            </Card>
+                          </Grid>
+                          
+                          <Grid item xs={12}>
+                            <Card elevation={2} sx={{ borderRadius: 2 }}>
+                              <CardContent>
+                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                                  <PhoneIcon color="primary" sx={{ mr: 1 }} />
+                                  <Typography variant="subtitle1" fontWeight="medium">
+                                    Phone Number
+                                  </Typography>
+                                </Box>
+                                <Typography variant="h6">
+                                  {user?.profile?.phone || 'Not provided'}
+                                </Typography>
+                              </CardContent>
+                            </Card>
+                          </Grid>
+                          
+                          <Grid item xs={12}>
+                            <Card elevation={2} sx={{ borderRadius: 2 }}>
+                              <CardContent>
+                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                                  <HomeIcon color="primary" sx={{ mr: 1 }} />
+                                  <Typography variant="subtitle1" fontWeight="medium">
+                                    Address
+                                  </Typography>
+                                </Box>
+                                <Typography variant="h6" sx={{ whiteSpace: 'pre-line' }}>
+                                  {user?.profile?.address || 'Not provided'}
+                                </Typography>
+                              </CardContent>
+                            </Card>
+                          </Grid>
+                        </Grid>
+                        
+                        <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            startIcon={<EditIcon />}
+                            onClick={toggleEditing}
+                            size="large"
+                            sx={{ borderRadius: 2, px: 4 }}
+                          >
+                            Edit Profile
+                          </Button>
+                        </Box>
+                      </Box>
+                    )}
                   </Box>
-                )}
-              </Box>
-            )}
-            
-            {/* Favorites Tab */}
-            {tabValue === 1 && (
-              <FavoritesTab />
-            )}
-            
-            {/* Other tabs would go here */}
-            {tabValue === 3 && (
-              <OrdersTab />
-            )}
-            
-            {tabValue === 4 && (
-              <Box>
-                <Typography variant="h5" component="h2" fontWeight="bold" gutterBottom>
-                  <SettingsIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                  Account Settings
-                </Typography>
-                <Divider sx={{ mb: 3 }} />
-                
-                <Typography variant="body1" align="center" sx={{ py: 4 }}>
-                  Account settings and password change options will be displayed here.
-                </Typography>
-              </Box>
-            )}
-          </Paper>
+              )}
+              
+              {/* Favorites Tab */}
+              {tabValue === 1 && (
+                  <Box>
+                    <FavoritesTab />
+                  </Box>
+              )}
+              
+              {/* Order History Tab */}
+              {tabValue === 3 && (
+                  <Box>
+                    <OrdersTab />
+                  </Box>
+              )}
+              
+              {/* Account Settings Tab */}
+              {tabValue === 4 && (
+                  <Box>
+                    <Typography 
+                      variant="h5" 
+                      component="h2" 
+                      fontWeight="bold" 
+                      gutterBottom
+                      sx={{ 
+                        display: 'flex',
+                        alignItems: 'center',
+                        color: theme.palette.primary.main
+                      }}
+                    >
+                      <SettingsIcon sx={{ mr: 1 }} />
+                      Account Settings
+                    </Typography>
+                    
+                    <Divider sx={{ mb: 4 }} />
+                    
+                    <Card 
+                      elevation={2} 
+                      sx={{ 
+                        borderRadius: 2, 
+                        p: 2,
+                        textAlign: 'center',
+                        bgcolor: theme.palette.mode === 'dark' ? 'rgba(66, 66, 66, 0.6)' : 'rgba(255, 255, 255, 0.6)',
+                      }}
+                    >
+                      <Typography variant="body1" sx={{ py: 4 }}>
+                        Account settings and password change options will be available soon.
+                      </Typography>
+                      
+                      <Button 
+                        variant="outlined" 
+                        color="primary"
+                        disabled
+                        sx={{ borderRadius: 2, mt: 2 }}
+                      >
+                        Change Password
+                      </Button>
+                    </Card>
+                  </Box>
+              )}
+            </Paper>
         </Grid>
       </Grid>
 
@@ -472,12 +741,17 @@ function ProfilePage() {
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        TransitionProps={{ timeout: 600 }}
       >
         <Alert 
           onClose={handleCloseSnackbar} 
           severity={snackbar.severity}
           variant="filled"
-          sx={{ width: '100%' }}
+          sx={{ 
+            width: '100%',
+            borderRadius: 2,
+            boxShadow: theme.shadows[6]
+          }}
         >
           {snackbar.message}
         </Alert>

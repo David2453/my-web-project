@@ -35,9 +35,34 @@ useEffect(() => {
       console.error('Error fetching locations:', err);
     }
   };
+  
 
   fetchLocations();
 }, []);
+
+// Add this useEffect after your existing one
+useEffect(() => {
+  const fetchBikes = async () => {
+    if (!selectedLocation) return;
+    
+    setLoading(true);
+    try {
+      const res = await axios.get(`/api/bikes/rental/${selectedLocation}`);
+      setBikes(res.data);
+      setFilteredBikes(res.data);
+      setError(null);
+    } catch (err) {
+      setError('Failed to load bikes. Please try again later.');
+      console.error('Error fetching bikes:', err);
+      setBikes([]);
+      setFilteredBikes([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchBikes();
+}, [selectedLocation]);
 
   // Rest of your component remains the same..
 

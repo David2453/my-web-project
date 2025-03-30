@@ -97,7 +97,9 @@ function Navbar() {
     { title: 'Home', path: '/' },
     { title: 'Bikes', path: '/bikes' },
     { title: 'Shop', path: '/shop' },
-    { title: 'Rentals', path: '/rentals' }
+    { title: 'Rentals', path: '/rentals' },
+    { title: 'Bike Routes', path: '/routes' }
+
   ];
 
   // Drawer content for mobile view

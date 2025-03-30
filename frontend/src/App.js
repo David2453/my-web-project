@@ -17,6 +17,8 @@ import Shop from './components/pages/Shop';
 import Rentals from './components/pages/Rentals';
 import Bikes from './components/pages/Bikes';
 import BikeDetailMUI from './components/bikes/BikeDetailMUI';
+import BikeRoutes from './components/pages/BikeRoutes';
+import RouteDetail from './components/routes/RouteDetail';
 import { AuthProvider } from './components/context/AuthContext';
 import { FavoritesProvider } from './components/context/FavoritesContext';
 import { CartProvider } from './components/context/CartContext';
@@ -91,6 +93,9 @@ function App() {
                     <Route path="/bikes" element={<Bikes />} />
                     <Route path="/bikes/:id" element={<BikeDetailMUI />} />
                     <Route path="/test" element={<TestMUI />} />
+
+                    <Route path="/routes" element={<BikeRoutes />} />
+                    <Route path="/routes/:id" element={<RouteDetail />} />
                   </Routes>
                 </div>
               </div>
