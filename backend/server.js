@@ -28,4 +28,9 @@ app.use('/api/cart', require('./routes/cart'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/reviews', require('./routes/reviews'));
 app.use('/api/routes', require('./routes/routes'));
+
+app.use('/api/admin/bikes', require('./routes/admin/bikes'));
+app.use('/api/admin/users', require('./routes/admin/users'));
+
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

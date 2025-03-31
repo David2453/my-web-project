@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
+import BikeForm from './BikeForm';
 import { AuthContext } from '../context/AuthContext';
 import { 
   Box, 
@@ -25,7 +26,8 @@ import {
   Delete as DeleteIcon,
   PersonAdd as PersonAddIcon,
   DirectionsBike as BikeIcon,
-  LocationOn as LocationIcon
+  LocationOn as LocationIcon,
+  Add as AddIcon
 } from '@mui/icons-material';
 
 function TabPanel(props) {
@@ -64,11 +66,12 @@ function AdminPanel() {
     bikes: null,
     locations: null
   });
-  
+  const [openBikeForm, setOpenBikeForm] = useState(false);
+  const [currentBike, setCurrentBike] = useState(null);
+
   // Check if user is admin
   useEffect(() => {
     if (!authState.user || authState.user.role !== 'admin') {
-      // Set errors for non-admin users
       setError({
         users: 'Access denied. Admin privileges required.',
         bikes: 'Access denied. Admin privileges required.',
@@ -76,7 +79,7 @@ function AdminPanel() {
       });
     }
   }, [authState]);
-  
+
   // Fetch data when tab changes
   useEffect(() => {
     if (tabValue === 0) {
@@ -89,33 +92,43 @@ function AdminPanel() {
   }, [tabValue]);
 
   const fetchUsers = async () => {
-    // In a real implementation, this would fetch users from your API
     setLoading(prev => ({ ...prev, users: true }));
-    
     try {
-      // Simulate API call or use actual endpoint if available
-      // const res = await axios.get('/api/users/admin');
-      // setUsers(res.data);
-      
-      // Mock data for demo
-      await new Promise(resolve => setTimeout(resolve, 800));
-      const mockUsers = [
-        { _id: '1', username: 'admin', email: 'admin@example.com', role: 'admin', createdAt: '2023-05-15' },
-        { _id: '2', username: 'john_doe', email: 'john@example.com', role: 'user', createdAt: '2023-05-16' },
-        { _id: '3', username: 'jane_smith', email: 'jane@example.com', role: 'user', createdAt: '2023-05-17' },
-        { _id: '4', username: 'guest_user', email: 'guest@example.com', role: 'guest', createdAt: '2023-05-18' },
-      ];
-      
-      setUsers(mockUsers);
+      const res = await axios.get('/api/admin/users', {
+        headers: {
+          'x-auth-token': localStorage.getItem('token')
+        }
+      });
+      setUsers(res.data);
       setError(prev => ({ ...prev, users: null }));
     } catch (err) {
       setError(prev => ({ 
         ...prev, 
-        users: 'Failed to load users. Please try again.' 
+        users: err.response?.data.msg || 'Failed to load users. Please try again.' 
       }));
       console.error('Error fetching users:', err);
     } finally {
       setLoading(prev => ({ ...prev, users: false }));
+    }
+  };
+
+  const deleteUser = async (userId) => {
+    if (!window.confirm('Are you sure you want to delete this user?')) {
+      return;
+    }
+    try {
+      await axios.delete(`/api/admin/users/${userId}`, {
+        headers: {
+          'x-auth-token': localStorage.getItem('token')
+        }
+      });
+      setUsers(users.filter(user => user._id !== userId));
+    } catch (err) {
+      setError(prev => ({ 
+        ...prev, 
+        users: err.response?.data.msg || 'Failed to delete user. Please try again.' 
+      }));
+      console.error('Error deleting user:', err);
     }
   };
 
@@ -126,20 +139,33 @@ function AdminPanel() {
       setBikes(res.data);
       setError(prev => ({ ...prev, bikes: null }));
     } catch (err) {
-      // If the API call fails, we'll use mock data for demonstration
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      const mockBikes = [
-        { _id: '1', name: 'Mountain Explorer', type: 'Mountain Bike', price: 899.99, rentalPrice: 35.99, purchaseStock: 15 },
-        { _id: '2', name: 'City Cruiser', type: 'Urban Bike', price: 699.99, rentalPrice: 25.99, purchaseStock: 20 },
-        { _id: '3', name: 'Road Master', type: 'Road Bike', price: 1199.99, rentalPrice: 45.99, purchaseStock: 10 },
-        { _id: '4', name: 'Hybrid Commuter', type: 'Hybrid Bike', price: 749.99, rentalPrice: 30.99, purchaseStock: 12 },
-      ];
-      
-      setBikes(mockBikes);
-      setError(prev => ({ ...prev, bikes: null }));
+      setError(prev => ({ 
+        ...prev, 
+        bikes: err.response?.data.msg || 'Failed to load bikes. Please try again.' 
+      }));
+      console.error('Error fetching bikes:', err);
     } finally {
       setLoading(prev => ({ ...prev, bikes: false }));
+    }
+  };
+
+  const deleteBike = async (bikeId) => {
+    if (!window.confirm('Are you sure you want to delete this bike?')) {
+      return;
+    }
+    try {
+      await axios.delete(`/api/admin/bikes/${bikeId}`, {
+        headers: {
+          'x-auth-token': localStorage.getItem('token')
+        }
+      });
+      setBikes(bikes.filter(bike => bike._id !== bikeId));
+    } catch (err) {
+      setError(prev => ({ 
+        ...prev, 
+        bikes: err.response?.data.msg || 'Failed to delete bike. Please try again.' 
+      }));
+      console.error('Error deleting bike:', err);
     }
   };
 
@@ -150,15 +176,12 @@ function AdminPanel() {
       setLocations(res.data);
       setError(prev => ({ ...prev, locations: null }));
     } catch (err) {
-      // If the API call fails, we'll use mock data for demonstration
       await new Promise(resolve => setTimeout(resolve, 800));
-      
       const mockLocations = [
         { _id: '1', name: 'New York City Store', code: 'nyc', city: 'New York', state: 'NY', address: '123 Broadway', zipCode: '10001' },
         { _id: '2', name: 'Los Angeles Store', code: 'la', city: 'Los Angeles', state: 'CA', address: '456 Hollywood Blvd', zipCode: '90028' },
         { _id: '3', name: 'Chicago Store', code: 'chi', city: 'Chicago', state: 'IL', address: '789 Michigan Ave', zipCode: '60611' },
       ];
-      
       setLocations(mockLocations);
       setError(prev => ({ ...prev, locations: null }));
     } finally {
@@ -166,21 +189,57 @@ function AdminPanel() {
     }
   };
 
+  const handleAddBike = () => {
+    setCurrentBike(null);
+    setOpenBikeForm(true);
+  };
+
+  const handleEditBike = (bike) => {
+    setCurrentBike(bike);
+    setOpenBikeForm(true);
+  };
+
+  const handleCloseBikeForm = () => {
+    setOpenBikeForm(false);
+  };
+
+  const handleSubmitBike = async (formData) => {
+    try {
+      const headers = {
+        'x-auth-token': localStorage.getItem('token')
+      };
+      let response;
+      if (currentBike) {
+        // Update existing bike
+        response = await axios.put(`/api/admin/bikes/${currentBike._id}`, formData, { headers });
+        setBikes(bikes.map(bike => 
+          bike._id === currentBike._id ? response.data : bike
+        ));
+      } else {
+        // Add new bike
+        response = await axios.post('/api/admin/bikes', formData, { headers });
+        setBikes([...bikes, response.data]);
+      }
+      setError(prev => ({ ...prev, bikes: null }));
+    } catch (err) {
+      setError(prev => ({ 
+        ...prev, 
+        bikes: err.response?.data.msg || 'Failed to save bike. Please try again.' 
+      }));
+      console.error('Error saving bike:', err);
+    }
+  };
+
   const handleChangeTab = (event, newValue) => {
     setTabValue(newValue);
   };
-  
-  // Role color mapping
+
   const getRoleColor = (role) => {
     switch(role) {
-      case 'admin':
-        return 'error';
-      case 'user':
-        return 'primary';
-      case 'guest':
-        return 'default';
-      default:
-        return 'default';
+      case 'admin': return 'error';
+      case 'user': return 'primary';
+      case 'guest': return 'default';
+      default: return 'default';
     }
   };
 
@@ -225,11 +284,9 @@ function AdminPanel() {
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3, alignItems: 'center' }}>
             <Typography variant="h6">User List</Typography>
           </Box>
-
           {error.users && (
             <Alert severity="error" sx={{ mb: 2 }}>{error.users}</Alert>
           )}
-
           {loading.users ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
               <CircularProgress />
@@ -269,10 +326,12 @@ function AdminPanel() {
                         </TableCell>
                         <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
                         <TableCell align="right">
-                          <IconButton color="primary" size="small">
-                            <EditIcon />
-                          </IconButton>
-                          <IconButton color="error" size="small" disabled={user.role === 'admin'}>
+                          <IconButton 
+                            color="error" 
+                            size="small" 
+                            disabled={user.role === 'admin'}
+                            onClick={() => deleteUser(user._id)}
+                          >
                             <DeleteIcon />
                           </IconButton>
                         </TableCell>
@@ -289,12 +348,18 @@ function AdminPanel() {
         <TabPanel value={tabValue} index={1}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3, alignItems: 'center' }}>
             <Typography variant="h6">Bike Inventory</Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<AddIcon />}
+              onClick={handleAddBike}
+            >
+              Add New Bike
+            </Button>
           </Box>
-
           {error.bikes && (
             <Alert severity="error" sx={{ mb: 2 }}>{error.bikes}</Alert>
           )}
-
           {loading.bikes ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
               <CircularProgress />
@@ -336,10 +401,18 @@ function AdminPanel() {
                         <TableCell>${bike.rentalPrice}/day</TableCell>
                         <TableCell>{bike.purchaseStock}</TableCell>
                         <TableCell align="right">
-                          <IconButton color="primary" size="small">
+                          <IconButton 
+                            color="primary" 
+                            size="small"
+                            onClick={() => handleEditBike(bike)}
+                          >
                             <EditIcon />
                           </IconButton>
-                          <IconButton color="error" size="small">
+                          <IconButton 
+                            color="error" 
+                            size="small"
+                            onClick={() => deleteBike(bike._id)}
+                          >
                             <DeleteIcon />
                           </IconButton>
                         </TableCell>
@@ -357,11 +430,9 @@ function AdminPanel() {
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3, alignItems: 'center' }}>
             <Typography variant="h6">Store Locations</Typography>
           </Box>
-
           {error.locations && (
             <Alert severity="error" sx={{ mb: 2 }}>{error.locations}</Alert>
           )}
-
           {loading.locations ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
               <CircularProgress />
@@ -411,6 +482,12 @@ function AdminPanel() {
           )}
         </TabPanel>
       </Paper>
+      <BikeForm 
+        open={openBikeForm}
+        handleClose={handleCloseBikeForm}
+        bike={currentBike}
+        onSubmit={handleSubmitBike}
+      />
     </Container>
   );
 }
