@@ -88,6 +88,8 @@ const { reviews, loading: reviewsLoading, fetchReviews, addReview } = useContext
     severity: 'success'
   });
 
+  const [locations, setLocations] = useState([]);
+  
   // Load bike details from API
   useEffect(() => {
     const fetchBikeDetails = async () => {
@@ -237,49 +239,76 @@ const handleTabChange = (event, newValue) => {
     if (!authState.isAuthenticated) {
       setSnackbar({
         open: true,
-        message: 'Please login to add items to cart',
+        message: 'Te rugăm să te autentifici pentru a adăuga articole în coș',
         severity: 'warning'
       });
-      return;
+      return false;
     }
     
     setActionLoading(true);
     try {
-      if (mode === 'rental' && (!startDate || !endDate)) {
-        setSnackbar({
-          open: true,
-          message: 'Please select start and end dates',
-          severity: 'warning'
-        });
-        setActionLoading(false);
-        return;
+      if (mode === 'rental') {
+        if (!startDate || !endDate) {
+          setSnackbar({
+            open: true,
+            message: 'Te rugăm să selectezi data de început și de sfârșit',
+            severity: 'warning'
+          });
+          setActionLoading(false);
+          return false;
+        }
+        
+        if (!locationId) {
+          setSnackbar({
+            open: true,
+            message: 'Te rugăm să selectezi o locație pentru închiriere',
+            severity: 'warning'
+          });
+          setActionLoading(false);
+          return false;
+        }
       }
+      
+      // Create properly formatted dates
+      const formattedStartDate = mode === 'rental' ? new Date(startDate).toISOString() : null;
+      const formattedEndDate = mode === 'rental' ? new Date(endDate).toISOString() : null;
+      
+      console.log("Adăugare în coș:", {
+        id, 
+        mode, 
+        quantity, 
+        startDate: formattedStartDate, 
+        endDate: formattedEndDate, 
+        locationId
+      });
       
       const success = await addToCart(
         id,
         mode,
         quantity,
-        mode === 'rental' ? startDate : null,
-        mode === 'rental' ? endDate : null,
-        mode === 'rental' ? locationId : null
+        formattedStartDate,
+        formattedEndDate,
+        locationId
       );
       
       if (success) {
         setSnackbar({
           open: true,
-          message: `${bike.name} added to cart`,
+          message: `${bike.name} a fost adăugat în coș`,
           severity: 'success'
         });
+        return true;
       } else {
-        throw new Error('Failed to add to cart');
+        throw new Error('Adăugarea în coș a eșuat');
       }
     } catch (err) {
-      console.error('Error adding to cart:', err);
+      console.error('Eroare la adăugarea în coș:', err);
       setSnackbar({
         open: true,
-        message: 'Error adding to cart. Please try again.',
+        message: `Eroare la adăugarea în coș: ${err.response?.data?.message || err.message || 'Verificați datele introduse'}`,
         severity: 'error'
       });
+      return false;
     } finally {
       setActionLoading(false);
     }
@@ -287,9 +316,9 @@ const handleTabChange = (event, newValue) => {
 
   // Handle Buy Now / Book Now
   const handleBuyNow = async () => {
-    await handleAddToCart();
+    const success = await handleAddToCart();
     // Only navigate if the add to cart was successful
-    if (!actionLoading) {
+    if (success) {
       navigate('/cart');
     }
   };
@@ -315,6 +344,35 @@ const handleTabChange = (event, newValue) => {
 
   // Format today's date for min date in calendar
   const today = new Date().toISOString().split('T')[0];
+
+  // Load locations for rental
+  useEffect(() => {
+    const fetchLocations = async () => {
+      if (mode === 'rental') {
+        try {
+          const res = await axios.get('/api/locations');
+          console.log('Locații primite de la server:', res.data);
+          setLocations(res.data);
+          
+          // If we don't have a locationId yet but locations are available, set the first one
+          if (!locationId && res.data.length > 0) {
+            const firstLocationId = res.data[0]._id || res.data[0].id || res.data[0].code;
+            console.log(`Setare locație implicită: ${firstLocationId}`);
+            setLocationId(firstLocationId);
+          }
+        } catch (err) {
+          console.error('Eroare la încărcarea locațiilor:', err);
+          setSnackbar({
+            open: true,
+            message: 'Nu s-au putut încărca locațiile. Te rugăm să încerci din nou.',
+            severity: 'error'
+          });
+        }
+      }
+    };
+    
+    fetchLocations();
+  }, [mode, locationId]);
 
   if (loading) {
     return (
@@ -554,10 +612,36 @@ const handleTabChange = (event, newValue) => {
               {mode === 'rental' && tabValue === 0 && (
                 <Box>
                   <Grid container spacing={2} mb={3}>
+                    <Grid item xs={12}>
+                      <TextField
+                        select
+                        fullWidth
+                        label="Locație"
+                        value={locationId || ''}
+                        onChange={(e) => {
+                          console.log('Locație selectată:', e.target.value);
+                          setLocationId(e.target.value);
+                        }}
+                        SelectProps={{
+                          native: true,
+                        }}
+                      >
+                        <option value="">Selectează o locație</option>
+                        {locations.map((location) => {
+                          // Handle different possible ID field names
+                          const locationId = location._id || location.id || location.code;
+                          return (
+                            <option key={locationId} value={locationId}>
+                              {location.name}
+                            </option>
+                          );
+                        })}
+                      </TextField>
+                    </Grid>
                     <Grid item xs={12} sm={6}>
                       <TextField
                         fullWidth
-                        label="Start Date"
+                        label="Data început"
                         type="date"
                         InputLabelProps={{ shrink: true }}
                         inputProps={{ min: today }}
@@ -568,7 +652,7 @@ const handleTabChange = (event, newValue) => {
                     <Grid item xs={12} sm={6}>
                       <TextField
                         fullWidth
-                        label="End Date"
+                        label="Data sfârșit"
                         type="date"
                         InputLabelProps={{ shrink: true }}
                         inputProps={{ min: startDate || today }}
@@ -582,7 +666,7 @@ const handleTabChange = (event, newValue) => {
                   {startDate && endDate && (
                     <Box mb={3} p={2} bgcolor="background.default" borderRadius={1}>
                       <Typography variant="body2" gutterBottom>
-                        Estimated Price:
+                        Preț estimat:
                       </Typography>
                       <Typography variant="h6" color="primary.main" fontWeight="bold">
                         ${calculateRentalPrice()}
@@ -597,9 +681,9 @@ const handleTabChange = (event, newValue) => {
                     startIcon={actionLoading ? <CircularProgress size={20} color="inherit" /> : <CalendarIcon />}
                     fullWidth
                     onClick={handleBuyNow}
-                    disabled={!startDate || !endDate || actionLoading}
+                    disabled={!locationId || !startDate || !endDate || actionLoading}
                   >
-                    {actionLoading ? 'Processing...' : 'Book Now'}
+                    {actionLoading ? 'Se procesează...' : 'Rezervă acum'}
                   </Button>
                 </Box>
               )}

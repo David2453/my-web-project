@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import BikeForm from './BikeForm';
+import StatisticsDashboard from './StatisticsDashboard';
 import { AuthContext } from '../context/AuthContext';
 import { 
   Box, 
@@ -27,8 +28,10 @@ import {
   PersonAdd as PersonAddIcon,
   DirectionsBike as BikeIcon,
   LocationOn as LocationIcon,
-  Add as AddIcon
+  Add as AddIcon,
+  BarChart as BarChartIcon
 } from '@mui/icons-material';
+
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -82,11 +85,11 @@ function AdminPanel() {
 
   // Fetch data when tab changes
   useEffect(() => {
-    if (tabValue === 0) {
+    if (tabValue === 1) {
       fetchUsers();
-    } else if (tabValue === 1) {
-      fetchBikes();
     } else if (tabValue === 2) {
+      fetchBikes();
+    } else if (tabValue === 3) {
       fetchLocations();
     }
   }, [tabValue]);
@@ -274,13 +277,19 @@ function AdminPanel() {
           textColor="primary"
           variant="fullWidth"
         >
+          <Tab icon={<BarChartIcon />} label="Statistics" />
           <Tab icon={<PersonAddIcon />} label="User Management" />
           <Tab icon={<BikeIcon />} label="Bike Management" />
           <Tab icon={<LocationIcon />} label="Location Management" />
         </Tabs>
 
-        {/* User Management Tab */}
+        {/* Statistics Dashboard Tab */}
         <TabPanel value={tabValue} index={0}>
+          <StatisticsDashboard />
+        </TabPanel>
+
+        {/* User Management Tab */}
+        <TabPanel value={tabValue} index={1}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3, alignItems: 'center' }}>
             <Typography variant="h6">User List</Typography>
           </Box>
@@ -345,7 +354,7 @@ function AdminPanel() {
         </TabPanel>
 
         {/* Bike Management Tab */}
-        <TabPanel value={tabValue} index={1}>
+        <TabPanel value={tabValue} index={2}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3, alignItems: 'center' }}>
             <Typography variant="h6">Bike Inventory</Typography>
             <Button
@@ -426,7 +435,7 @@ function AdminPanel() {
         </TabPanel>
 
         {/* Location Management Tab */}
-        <TabPanel value={tabValue} index={2}>
+        <TabPanel value={tabValue} index={3}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3, alignItems: 'center' }}>
             <Typography variant="h6">Store Locations</Typography>
           </Box>
