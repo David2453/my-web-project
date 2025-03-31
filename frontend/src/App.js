@@ -19,6 +19,7 @@ import Bikes from './components/pages/Bikes';
 import BikeDetailMUI from './components/bikes/BikeDetailMUI';
 import BikeRoutes from './components/pages/BikeRoutes';
 import RouteDetail from './components/routes/RouteDetail';
+import { ReviewsProvider } from './components/context/ReviewsContext';
 import { AuthProvider } from './components/context/AuthContext';
 import { FavoritesProvider } from './components/context/FavoritesContext';
 import { CartProvider } from './components/context/CartContext';
@@ -47,6 +48,8 @@ function App() {
         <FavoritesProvider>
           <CartProvider>
           <OrdersProvider>  {/* Add this line */}
+          <ReviewsProvider>  {/* Add this wrapper */}
+
             <Router>
               <ScrollToTop />
               <div className="App">
@@ -100,6 +103,7 @@ function App() {
                 </div>
               </div>
             </Router>
+            </ReviewsProvider>
           </OrdersProvider>  {/* Add this closing tag */}
           </CartProvider>
         </FavoritesProvider>

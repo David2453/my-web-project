@@ -5,6 +5,9 @@ import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
 import { FavoritesContext } from '../context/FavoritesContext';
+import { ReviewsContext } from '../context/ReviewsContext';
+import ReviewForm from '../reviews/ReviewForm';
+import ReviewList from '../reviews/ReviewList';
 import {
   Box,
   Container,
@@ -67,7 +70,8 @@ const [locationId, setLocationId] = useState(initialLocationId);
   const { authState } = useContext(AuthContext);
   const { addToCart } = useContext(CartContext);
   const { addFavorite, removeFavorite, checkIsFavorite } = useContext(FavoritesContext);
-  
+  // Add this with your other context hooks
+const { reviews, loading: reviewsLoading, fetchReviews, addReview } = useContext(ReviewsContext);
   // State
   const [bike, setBike] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -102,6 +106,8 @@ const [locationId, setLocationId] = useState(initialLocationId);
             console.error('Error checking if bike is favorite:', err);
           }
         }
+        fetchReviews(id);
+
       } catch (err) {
         console.error('Error fetching bike details:', err);
         setError('Failed to load bike details. Please try again.');
@@ -113,7 +119,7 @@ const [locationId, setLocationId] = useState(initialLocationId);
     };
 
     fetchBikeDetails();
-  }, [id, authState.isAuthenticated, checkIsFavorite, mode]); // Added mode as dependency
+  }, [id, authState.isAuthenticated, checkIsFavorite, mode, fetchReviews]); // Add fetchReviews to dependencies
   // This useEffect watches for changes in the mode from URL parameters
 // This useEffect watches for changes in the mode from URL parameters
 useEffect(() => {
@@ -428,19 +434,24 @@ const handleTabChange = (event, newValue) => {
             }}
           >
             <Box display="flex" alignItems="center" mb={1}>
-              <Chip 
-                label={bike.type} 
-                color="primary" 
-                variant="outlined" 
-                size="small" 
-                icon={<BikeIcon />}
-                sx={{ mr: 1 }}
-              />
-              <Rating value={bike.averageRating || 0} precision={0.5} size="small" readOnly />
-              <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-                ({bike.reviewCount || 0} reviews)
-              </Typography>
-            </Box>
+  <Chip 
+    label={bike.type} 
+    color="primary" 
+    variant="outlined" 
+    size="small" 
+    icon={<BikeIcon />}
+    sx={{ mr: 1 }}
+  />
+  <Rating 
+    value={bike.averageRating || 0} 
+    precision={0.5} 
+    size="small" 
+    readOnly 
+  />
+  <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+    ({reviews ? reviews.length : bike.reviewCount || 0} reviews)
+  </Typography>
+</Box>
             
             <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
               {bike.name}
@@ -670,52 +681,27 @@ const handleTabChange = (event, newValue) => {
         </Grid>
       </Grid>
       
-      {/* Related Bikes Section - Would be implemented with actual data */}
-      <Box mt={6}>
-        <Typography variant="h5" component="h2" fontWeight="bold" gutterBottom>
-          You Might Also Like
-        </Typography>
-        <Divider sx={{ mb: 3 }} />
-        <Grid container spacing={3}>
-          {[1, 2, 3, 4].map((item) => (
-            <Grid item xs={12} sm={6} md={3} key={item}>
-              <Card 
-                elevation={2} 
-                sx={{ 
-                  height: '100%',
-                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                  '&:hover': {
-                    transform: 'translateY(-8px)',
-                    boxShadow: 8
-                  },
-                  borderRadius: 2
-                }}
-              >
-                <CardMedia
-                  component="img"
-                  height={160}
-                  image={bike.image}
-                  alt={`Similar bike ${item}`}
-                />
-                <Box p={2}>
-                  <Typography variant="body1" fontWeight="medium" gutterBottom noWrap>
-                    {["Road Runner", "Mountain Explorer", "City Cruiser", "Hybrid Deluxe"][item-1]}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    {bike.type}
-                  </Typography>
-                  <Box display="flex" justifyContent="space-between" alignItems="center" mt={1}>
-                    <Typography variant="body1" fontWeight="bold" color="primary.main">
-                      ${[699, 899, 599, 749][item-1]}
-                    </Typography>
-                    <Chip size="small" label="View" component={Link} to="#" clickable />
-                  </Box>
-                </Box>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      </Box>
+      {/* Reviews Section */}
+<Box mt={6}>
+  <Typography variant="h5" component="h2" fontWeight="bold" gutterBottom>
+    Customer Reviews
+  </Typography>
+  <Divider sx={{ mb: 3 }} />
+  
+  {/* Review Form */}
+  <ReviewForm 
+    bikeId={id} 
+    onReviewSubmitted={(newReview) => addReview(newReview)}
+  />
+  
+  {/* Review List */}
+  <ReviewList 
+    reviews={reviews} 
+    loading={reviewsLoading}
+  />
+</Box>
+
+{/* Your existing "You Might Also Like" section */}
       
       {/* Snackbar for notifications */}
       <Snackbar
