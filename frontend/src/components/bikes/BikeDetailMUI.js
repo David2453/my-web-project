@@ -90,6 +90,18 @@ const { reviews, loading: reviewsLoading, fetchReviews, addReview } = useContext
 
   const [locations, setLocations] = useState([]);
   
+  // Adăugăm un nou state pentru imaginea activă
+  const [activeImage, setActiveImage] = useState(0);
+  const [images, setImages] = useState([]);
+
+  // Încărcăm imaginile la montarea componentei
+  useEffect(() => {
+    if (bike) {
+      // Presupunem că bike.images există, altfel folosim imaginea principală
+      setImages(bike.images || [bike.image]);
+    }
+  }, [bike]);
+  
   // Load bike details from API
   useEffect(() => {
     const fetchBikeDetails = async () => {
@@ -423,15 +435,67 @@ const handleTabChange = (event, newValue) => {
               borderRadius: 2, 
               overflow: 'hidden',
               mb: 2,
-              position: 'relative'
+              position: 'relative',
+              '&:hover': {
+                '& .MuiCardMedia-root': {
+                  transform: 'scale(1.02)',
+                  transition: 'transform 0.3s ease-in-out'
+                }
+              }
             }}
           >
             <CardMedia
               component="img"
               alt={bike.name}
-              image={bike.image}
-              sx={{ height: 400, objectFit: 'cover' }}
+              image={images[activeImage]}
+              sx={{ 
+                height: 400, 
+                objectFit: 'cover',
+                transition: 'transform 0.3s ease-in-out'
+              }}
             />
+            {images.length > 1 && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  bottom: 16,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  display: 'flex',
+                  gap: 1,
+                  bgcolor: 'rgba(0, 0, 0, 0.5)',
+                  p: 1,
+                  borderRadius: 2
+                }}
+              >
+                {images.map((_, index) => (
+                  <IconButton
+                    key={index}
+                    size="small"
+                    onClick={() => setActiveImage(index)}
+                    sx={{
+                      p: 0.5,
+                      bgcolor: activeImage === index ? 'primary.main' : 'rgba(255, 255, 255, 0.3)',
+                      '&:hover': {
+                        bgcolor: activeImage === index ? 'primary.dark' : 'rgba(255, 255, 255, 0.5)'
+                      }
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src={images[index]}
+                      alt={`Thumbnail ${index + 1}`}
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        objectFit: 'cover',
+                        borderRadius: 1
+                      }}
+                    />
+                  </IconButton>
+                ))}
+              </Box>
+            )}
             <IconButton 
               color={favorite ? "error" : "default"}
               onClick={toggleFavorite}
@@ -442,41 +506,15 @@ const handleTabChange = (event, newValue) => {
                 right: 16,
                 backgroundColor: 'rgba(255, 255, 255, 0.9)',
                 '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.8)'
+                  backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                  transform: 'scale(1.1)',
+                  transition: 'all 0.2s ease-in-out'
                 }
               }}
             >
               {favorite ? <FavoriteIcon /> : <FavoriteBorderIcon />}
             </IconButton>
           </Card>
-
-          {/* Thumbnails - This would be used if you had multiple images */}
-          <Grid container spacing={1} sx={{ display: 'none' }}>
-            {[1, 2, 3, 4].map((item) => (
-              <Grid item xs={3} key={item}>
-                <Paper 
-                  elevation={2} 
-                  sx={{ 
-                    height: 70, 
-                    borderRadius: 1, 
-                    overflow: 'hidden',
-                    cursor: 'pointer',
-                    border: '2px solid transparent',
-                    '&:hover': {
-                      border: `2px solid ${theme.palette.primary.main}`
-                    }
-                  }}
-                >
-                  <Box
-                    component="img"
-                    src={bike.image}
-                    alt={`Thumbnail ${item}`}
-                    sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
         </Grid>
 
         {/* Bike Details */}
@@ -522,24 +560,38 @@ const handleTabChange = (event, newValue) => {
             <Divider sx={{ my: 2 }} />
             
             {/* Price section */}
-            <Box mb={3}>
+            <Box mb={3} sx={{
+              p: 2,
+              borderRadius: 2,
+              bgcolor: 'background.paper',
+              boxShadow: 1
+            }}>
               {mode === 'purchase' ? (
                 <>
-                  <Typography variant="h5" color="primary.main" fontWeight="bold">
+                  <Typography variant="h4" color="primary.main" fontWeight="bold" gutterBottom>
                     ${bike.price}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Free delivery for orders over $1000
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <CheckIcon color="success" fontSize="small" />
+                    <Typography variant="body2" color="text.secondary">
+                      Livrare gratuită pentru comenzi peste $1000
+                    </Typography>
+                  </Box>
                 </>
               ) : (
                 <>
-                  <Typography variant="h5" color="primary.main" fontWeight="bold">
-                    ${bike.rentalPrice}<Typography component="span" variant="body2" fontWeight="normal">/day</Typography>
+                  <Typography variant="h4" color="primary.main" fontWeight="bold" gutterBottom>
+                    ${bike.rentalPrice}
+                    <Typography component="span" variant="body1" fontWeight="normal" sx={{ ml: 1 }}>
+                      /zi
+                    </Typography>
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Refundable security deposit required
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <InfoIcon color="info" fontSize="small" />
+                    <Typography variant="body2" color="text.secondary">
+                      Depozit de garanție rambursabil
+                    </Typography>
+                  </Box>
                 </>
               )}
             </Box>
@@ -610,7 +662,12 @@ const handleTabChange = (event, newValue) => {
               
               {/* Rental Form */}
               {mode === 'rental' && tabValue === 0 && (
-                <Box>
+                <Box sx={{
+                  p: 2,
+                  borderRadius: 2,
+                  bgcolor: 'background.paper',
+                  boxShadow: 1
+                }}>
                   <Grid container spacing={2} mb={3}>
                     <Grid item xs={12}>
                       <TextField
@@ -625,10 +682,16 @@ const handleTabChange = (event, newValue) => {
                         SelectProps={{
                           native: true,
                         }}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            '&:hover fieldset': {
+                              borderColor: 'primary.main'
+                            }
+                          }
+                        }}
                       >
                         <option value="">Selectează o locație</option>
                         {locations.map((location) => {
-                          // Handle different possible ID field names
                           const locationId = location._id || location.id || location.code;
                           return (
                             <option key={locationId} value={locationId}>
@@ -647,6 +710,13 @@ const handleTabChange = (event, newValue) => {
                         inputProps={{ min: today }}
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            '&:hover fieldset': {
+                              borderColor: 'primary.main'
+                            }
+                          }
+                        }}
                       />
                     </Grid>
                     <Grid item xs={12} sm={6}>
@@ -659,16 +729,36 @@ const handleTabChange = (event, newValue) => {
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
                         disabled={!startDate}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            '&:hover fieldset': {
+                              borderColor: 'primary.main'
+                            }
+                          }
+                        }}
                       />
                     </Grid>
                   </Grid>
                   
                   {startDate && endDate && (
-                    <Box mb={3} p={2} bgcolor="background.default" borderRadius={1}>
-                      <Typography variant="body2" gutterBottom>
-                        Preț estimat:
+                    <Box 
+                      mb={3} 
+                      p={2} 
+                      bgcolor="primary.light" 
+                      borderRadius={2}
+                      sx={{
+                        color: 'white',
+                        transition: 'all 0.3s ease-in-out',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: 3
+                        }
+                      }}
+                    >
+                      <Typography variant="body1" gutterBottom>
+                        Preț estimat pentru perioada selectată:
                       </Typography>
-                      <Typography variant="h6" color="primary.main" fontWeight="bold">
+                      <Typography variant="h4" fontWeight="bold">
                         ${calculateRentalPrice()}
                       </Typography>
                     </Box>
@@ -682,6 +772,18 @@ const handleTabChange = (event, newValue) => {
                     fullWidth
                     onClick={handleBuyNow}
                     disabled={!locationId || !startDate || !endDate || actionLoading}
+                    sx={{
+                      py: 1.5,
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      fontSize: '1.1rem',
+                      fontWeight: 'bold',
+                      transition: 'all 0.3s ease-in-out',
+                      '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: 3
+                      }
+                    }}
                   >
                     {actionLoading ? 'Se procesează...' : 'Rezervă acum'}
                   </Button>

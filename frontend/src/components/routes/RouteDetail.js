@@ -33,7 +33,8 @@ import {
   Slide,
   useTheme,
   useMediaQuery,
-  Fade
+  Fade,
+  Collapse
 } from '@mui/material';
 import {
   DirectionsBike as BikeIcon,
@@ -51,7 +52,10 @@ import {
   Download as DownloadIcon,
   Navigation as NavigationIcon,
   WbSunny as SunnyIcon,
-  Star as StarIcon
+  Star as StarIcon,
+  ExpandMore as ExpandMoreIcon,
+  Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon
 } from '@mui/icons-material';
 
 // Fix Leaflet default icon
@@ -103,6 +107,10 @@ function RouteDetail() {
   const [weather, setWeather] = useState(null);
   const [showWeather, setShowWeather] = useState(false);
   const [userRating, setUserRating] = useState(0);
+  const [activeImage, setActiveImage] = useState(0);
+  const [showWeatherDetails, setShowWeatherDetails] = useState(false);
+  const [showMap, setShowMap] = useState(true);
+  const [showDescription, setShowDescription] = useState(true);
 
   // Fix Leaflet icon issues
   useEffect(() => {
@@ -346,32 +354,52 @@ function RouteDetail() {
                   p: 2, 
                   mb: 3, 
                   borderRadius: 2,
-                  background: 'linear-gradient(to right, #e0f7fa, #bbdefb)',
+                  background: 'linear-gradient(135deg, #e0f7fa 0%, #bbdefb 100%)',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: 3
+                  }
                 }}
+                onClick={() => setShowWeatherDetails(!showWeatherDetails)}
               >
-                <Typography variant="subtitle1" fontWeight="medium">
-                  Today's Weather for {route.location.name}
-                </Typography>
-                <Grid container spacing={2} sx={{ mt: 1 }}>
-                  <Grid item xs={4} textAlign="center">
-                    <SunnyIcon sx={{ fontSize: 40, color: '#f57c00' }} />
-                    <Typography variant="body2" fontWeight="medium">
-                      {weather?.condition}
-                    </Typography>
+                <Box display="flex" alignItems="center" justifyContent="space-between">
+                  <Typography variant="subtitle1" fontWeight="medium">
+                    Vremea în {route.location.name}
+                  </Typography>
+                  <IconButton size="small">
+                    <ExpandMoreIcon 
+                      sx={{ 
+                        transform: showWeatherDetails ? 'rotate(180deg)' : 'none',
+                        transition: 'transform 0.3s ease-in-out'
+                      }} 
+                    />
+                  </IconButton>
+                </Box>
+                
+                <Collapse in={showWeatherDetails}>
+                  <Grid container spacing={2} sx={{ mt: 1 }}>
+                    <Grid item xs={4} textAlign="center">
+                      <SunnyIcon sx={{ fontSize: 40, color: '#f57c00' }} />
+                      <Typography variant="body2" fontWeight="medium">
+                        {weather?.condition}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={4} textAlign="center">
+                      <Typography variant="h5" fontWeight="bold">
+                        {weather?.temp}°C
+                      </Typography>
+                      <Typography variant="body2">Temperatură</Typography>
+                    </Grid>
+                    <Grid item xs={4} textAlign="center">
+                      <Typography variant="body1" fontWeight="medium">
+                        {weather?.windSpeed} km/h
+                      </Typography>
+                      <Typography variant="body2">Vânt</Typography>
+                    </Grid>
                   </Grid>
-                  <Grid item xs={4} textAlign="center">
-                    <Typography variant="h5" fontWeight="bold">
-                      {weather?.temp}°C
-                    </Typography>
-                    <Typography variant="body2">Temperature</Typography>
-                  </Grid>
-                  <Grid item xs={4} textAlign="center">
-                    <Typography variant="body1" fontWeight="medium">
-                      {weather?.windSpeed} km/h
-                    </Typography>
-                    <Typography variant="body2">Wind Speed</Typography>
-                  </Grid>
-                </Grid>
+                </Collapse>
               </Paper>
             </Slide>
 
@@ -396,23 +424,35 @@ function RouteDetail() {
                   right: 10, 
                   zIndex: 1000,
                   display: 'flex',
-                  gap: 1
+                  gap: 1,
+                  bgcolor: 'rgba(255, 255, 255, 0.9)',
+                  p: 1,
+                  borderRadius: 2,
+                  boxShadow: 1
                 }}
               >
-                <Tooltip title="Download GPX">
+                <Tooltip title="Descarcă GPX">
                   <IconButton 
-                    sx={{ bgcolor: 'white', boxShadow: 2 }}
+                    size="small"
                     onClick={() => {
-                      // In a real app, you would implement GPX download here
-                      alert('Download GPX file functionality would be implemented here');
+                      // Implementare descărcare GPX
+                      alert('Funcționalitatea de descărcare GPX va fi implementată aici');
                     }}
                   >
                     <DownloadIcon />
                   </IconButton>
                 </Tooltip>
+                <Tooltip title={showMap ? "Ascunde harta" : "Arată harta"}>
+                  <IconButton 
+                    size="small"
+                    onClick={() => setShowMap(!showMap)}
+                  >
+                    {showMap ? <VisibilityIcon /> : <VisibilityOffIcon />}
+                  </IconButton>
+                </Tooltip>
               </Box>
             
-              {routeCoordinates.length > 0 ? (
+              {showMap && routeCoordinates.length > 0 ? (
                 <MapContainer 
                   center={routeCoordinates[0]} 
                   zoom={13} 
@@ -432,12 +472,12 @@ function RouteDetail() {
                   />
                   <Marker position={routeCoordinates[0]}>
                     <Popup>
-                      <b>Start point:</b> {route.name}
+                      <b>Punct de start:</b> {route.name}
                     </Popup>
                   </Marker>
                   <Marker position={routeCoordinates[routeCoordinates.length - 1]}>
                     <Popup>
-                      <b>End point:</b> {route.name}
+                      <b>Punct de final:</b> {route.name}
                     </Popup>
                   </Marker>
                   <LocationMarker />
@@ -451,7 +491,7 @@ function RouteDetail() {
                   bgcolor: 'grey.200'
                 }}>
                   <Typography variant="h6" color="text.secondary">
-                    Route map data not available
+                    Harta este ascunsă
                   </Typography>
                 </Box>
               )}
@@ -490,41 +530,75 @@ function RouteDetail() {
             {route.images && route.images.length > 0 && (
               <Box sx={{ mb: 3 }}>
                 <Typography variant="subtitle1" gutterBottom fontWeight="medium">
-                  Route Photos
+                  Galerie foto
                 </Typography>
-                <Grid container spacing={2}>
-                  {route.images.map((img, index) => (
-                    <Grid item xs={6} md={4} key={index}>
-                      <Card 
-                        sx={{ 
-                          borderRadius: 2, 
-                          overflow: 'hidden',
-                          transition: 'transform 0.3s, box-shadow 0.3s',
-                          '&:hover': {
-                            transform: 'scale(1.02)',
-                            boxShadow: theme.shadows[10]
-                          }
-                        }}
-                      >
-                        <CardActionArea onClick={() => handleImageClick(img)}>
-                          <CardMedia
+                <Card 
+                  elevation={4} 
+                  sx={{ 
+                    borderRadius: 2, 
+                    overflow: 'hidden',
+                    position: 'relative',
+                    '&:hover': {
+                      '& .MuiCardMedia-root': {
+                        transform: 'scale(1.02)',
+                        transition: 'transform 0.3s ease-in-out'
+                      }
+                    }
+                  }}
+                >
+                  <CardMedia
+                    component="img"
+                    height={400}
+                    image={route.images[activeImage]}
+                    alt={`Ruta ${route.name} - imagine ${activeImage + 1}`}
+                    sx={{ 
+                      objectFit: 'cover',
+                      transition: 'transform 0.3s ease-in-out'
+                    }}
+                  />
+                  {route.images.length > 1 && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        bottom: 16,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        display: 'flex',
+                        gap: 1,
+                        bgcolor: 'rgba(0, 0, 0, 0.5)',
+                        p: 1,
+                        borderRadius: 2
+                      }}
+                    >
+                      {route.images.map((_, index) => (
+                        <IconButton
+                          key={index}
+                          size="small"
+                          onClick={() => setActiveImage(index)}
+                          sx={{
+                            p: 0.5,
+                            bgcolor: activeImage === index ? 'primary.main' : 'rgba(255, 255, 255, 0.3)',
+                            '&:hover': {
+                              bgcolor: activeImage === index ? 'primary.dark' : 'rgba(255, 255, 255, 0.5)'
+                            }
+                          }}
+                        >
+                          <Box
                             component="img"
-                            height={120}
-                            image={img}
-                            alt={`Route photo ${index + 1}`}
-                            sx={{ 
+                            src={route.images[index]}
+                            alt={`Miniatură ${index + 1}`}
+                            sx={{
+                              width: 40,
+                              height: 40,
                               objectFit: 'cover',
-                              transition: 'all 0.3s',
-                              '&:hover': {
-                                transform: 'scale(1.1)'
-                              }
+                              borderRadius: 1
                             }}
                           />
-                        </CardActionArea>
-                      </Card>
-                    </Grid>
-                  ))}
-                </Grid>
+                        </IconButton>
+                      ))}
+                    </Box>
+                  )}
+                </Card>
               </Box>
             )}
           </Grid>

@@ -90,19 +90,25 @@
     border: none;
     border-radius: 10px;
     overflow: hidden;
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    position: relative;
     height: 100%;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
   }
   
   .bike-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
   }
   
   .bike-img {
-    height: 280px;
+    transition: transform 0.5s ease-in-out;
+    height: 200px;
     object-fit: cover;
+  }
+  
+  .bike-card:hover .bike-img {
+    transform: scale(1.05);
   }
   
   .bike-type {
@@ -232,4 +238,80 @@
     .bike-card {
       margin-bottom: 30px;
     }
+  }
+
+  /* Stilizare pentru eticheta de rating */
+  .bike-rating {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: gold;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: bold;
+    z-index: 10;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s;
+  }
+
+  .bike-rating:hover {
+    transform: scale(1.1);
+  }
+
+  /* Îmbunătățiri pentru bike-card */
+  .bike-card {
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bike-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  }
+
+  .bike-img {
+    transition: transform 0.5s ease-in-out;
+    height:270px;
+    object-fit: cover;
+  }
+
+  .bike-card:hover .bike-img {
+    transform: scale(1.05);
+  }
+
+  /* Stilizări pentru animații și tranziții */
+  .featured-section .btn {
+    transition: all 0.3s ease;
+  }
+
+  .featured-section .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Stilizare pentru eticheta de tip bicicletă */
+  .bike-type-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: rgba(44, 209, 68, 0.9);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: bold;
+    z-index: 10;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s;
+  }
+
+  .bike-type-badge:hover {
+    transform: scale(1.1);
   }
