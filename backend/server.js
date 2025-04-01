@@ -33,6 +33,7 @@ app.use('/api/routes', require('./routes/routes'));
 
 app.use('/api/admin/bikes', require('./routes/admin/bikes'));
 app.use('/api/admin/users', require('./routes/admin/users'));
+app.use('/api/admin/orders', require('./routes/admin/orders'));
 app.use('/api/admin/statistics', statisticsRoutes);
 
 

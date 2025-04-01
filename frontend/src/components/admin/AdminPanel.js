@@ -29,7 +29,9 @@ import {
   DirectionsBike as BikeIcon,
   LocationOn as LocationIcon,
   Add as AddIcon,
-  BarChart as BarChartIcon
+  BarChart as BarChartIcon,
+  ShoppingBag as OrderIcon,
+  CheckCircle as ApproveIcon
 } from '@mui/icons-material';
 
 
@@ -59,15 +61,18 @@ function AdminPanel() {
   const [users, setUsers] = useState([]);
   const [bikes, setBikes] = useState([]);
   const [locations, setLocations] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState({
     users: false,
     bikes: false,
-    locations: false
+    locations: false,
+    orders: false
   });
   const [error, setError] = useState({
     users: null,
     bikes: null,
-    locations: null
+    locations: null,
+    orders: null
   });
   const [openBikeForm, setOpenBikeForm] = useState(false);
   const [currentBike, setCurrentBike] = useState(null);
@@ -78,7 +83,8 @@ function AdminPanel() {
       setError({
         users: 'Access denied. Admin privileges required.',
         bikes: 'Access denied. Admin privileges required.',
-        locations: 'Access denied. Admin privileges required.'
+        locations: 'Access denied. Admin privileges required.',
+        orders: 'Access denied. Admin privileges required.'
       });
     }
   }, [authState]);
@@ -91,6 +97,8 @@ function AdminPanel() {
       fetchBikes();
     } else if (tabValue === 3) {
       fetchLocations();
+    } else if (tabValue === 4) {
+      fetchOrders();
     }
   }, [tabValue]);
 
@@ -192,6 +200,70 @@ function AdminPanel() {
     }
   };
 
+  const fetchOrders = async () => {
+    setLoading(prev => ({ ...prev, orders: true }));
+    try {
+      const res = await axios.get('/api/admin/orders', {
+        headers: {
+          'x-auth-token': localStorage.getItem('token')
+        }
+      });
+      setOrders(res.data);
+      setError(prev => ({ ...prev, orders: null }));
+    } catch (err) {
+      setError(prev => ({ 
+        ...prev, 
+        orders: err.response?.data.msg || 'Failed to load orders. Please try again.' 
+      }));
+      console.error('Error fetching orders:', err);
+    } finally {
+      setLoading(prev => ({ ...prev, orders: false }));
+    }
+  };
+
+  const updateOrderStatus = async (orderId, newStatus) => {
+    try {
+      const res = await axios.put(`/api/orders/${orderId}`, 
+        { status: newStatus },
+        {
+          headers: {
+            'x-auth-token': localStorage.getItem('token')
+          }
+        }
+      );
+      
+      // Update the orders list with the updated order
+      setOrders(orders.map(order => 
+        order._id === orderId ? res.data : order
+      ));
+      
+    } catch (err) {
+      setError(prev => ({ 
+        ...prev, 
+        orders: err.response?.data.msg || 'Failed to update order status. Please try again.' 
+      }));
+      console.error('Error updating order status:', err);
+    }
+  };
+
+  // Format date for orders
+  const formatDate = (dateString) => {
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
+  // Get order status color
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'pending': return 'warning';
+      case 'processing': return 'primary';
+      case 'shipped': return 'info';
+      case 'delivered': return 'success';
+      case 'cancelled': return 'error';
+      default: return 'default';
+    }
+  };
+
   const handleAddBike = () => {
     setCurrentBike(null);
     setOpenBikeForm(true);
@@ -281,6 +353,7 @@ function AdminPanel() {
           <Tab icon={<PersonAddIcon />} label="User Management" />
           <Tab icon={<BikeIcon />} label="Bike Management" />
           <Tab icon={<LocationIcon />} label="Location Management" />
+          <Tab icon={<OrderIcon />} label="Orders" />
         </Tabs>
 
         {/* Statistics Dashboard Tab */}
@@ -485,6 +558,91 @@ function AdminPanel() {
                       </TableRow>
                     ))
                   )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </TabPanel>
+
+        {/* Orders Tab */}
+        <TabPanel value={tabValue} index={4}>
+          <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h5" component="h2" fontWeight="medium">
+              <OrderIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+              Manage Orders
+            </Typography>
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={fetchOrders}
+            >
+              Refresh
+            </Button>
+          </Box>
+
+          {loading.orders ? (
+            <Box display="flex" justifyContent="center" my={4}>
+              <CircularProgress />
+            </Box>
+          ) : error.orders ? (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              {error.orders}
+            </Alert>
+          ) : orders.length === 0 ? (
+            <Alert severity="info">No orders found</Alert>
+          ) : (
+            <TableContainer component={Paper} elevation={1}>
+              <Table sx={{ minWidth: 650 }}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Order ID</TableCell>
+                    <TableCell>Date</TableCell>
+                    <TableCell>Customer</TableCell>
+                    <TableCell>Items</TableCell>
+                    <TableCell align="right">Total</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell align="right">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {orders.map((order) => (
+                    <TableRow key={order._id} sx={{ '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' } }}>
+                      <TableCell component="th" scope="row" sx={{ fontFamily: 'monospace' }}>
+                        #{order._id.substring(order._id.length - 8).toUpperCase()}
+                      </TableCell>
+                      <TableCell>{formatDate(order.createdAt)}</TableCell>
+                      <TableCell>
+                        {order.user ? `${order.user.firstName} ${order.user.lastName}` : 'Guest User'}
+                      </TableCell>
+                      <TableCell>{order.items.length} {order.items.length === 1 ? 'item' : 'items'}</TableCell>
+                      <TableCell align="right">${order.total.toFixed(2)}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={order.status.charAt(0).toUpperCase() + order.status.slice(1)} 
+                          color={getStatusColor(order.status)} 
+                          size="small" 
+                        />
+                      </TableCell>
+                      <TableCell align="right">
+                        {order.status === 'pending' && (
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color="success"
+                            startIcon={<ApproveIcon />}
+                            onClick={() => updateOrderStatus(order._id, 'delivered')}
+                          >
+                            Approve
+                          </Button>
+                        )}
+                        {order.status !== 'pending' && (
+                          <Typography variant="body2" color="text.secondary">
+                            No action needed
+                          </Typography>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </TableContainer>

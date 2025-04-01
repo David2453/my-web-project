@@ -27,6 +27,12 @@ router.get('/overview', adminMiddleware, async (req, res) => {
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const newUsers = await User.countDocuments({ createdAt: { $gte: sevenDaysAgo } });
 
+    // Get pending orders count
+    const pendingOrders = await Order.countDocuments({ status: 'pending' });
+
+    // Get completed orders (delivered status)
+    const completedOrders = await Order.countDocuments({ status: 'delivered' });
+
     // Get top selling bikes (for purchases only)
     const topSellingBikes = await Order.aggregate([
       { $unwind: '$items' },
@@ -112,12 +118,15 @@ router.get('/overview', adminMiddleware, async (req, res) => {
       };
     });
 
+    // Send statistics
     res.json({
       counts: {
         users: userCount,
         bikes: bikeCount,
         orders: orderCount,
         reviews: reviewCount,
+        pendingOrders,
+        completedOrders,
         newUsers
       },
       revenue: {
@@ -130,8 +139,8 @@ router.get('/overview', adminMiddleware, async (req, res) => {
       }
     });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    console.error('Error fetching admin statistics:', err.message);
+    res.status(500).send('Server error');
   }
 });
 

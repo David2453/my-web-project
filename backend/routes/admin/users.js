@@ -1,19 +1,19 @@
 // backend/routes/admin/users.js
 const express = require('express');
 const router = express.Router();
-const User = require('../../models/Users');
 const adminMiddleware = require('../../middleware/adminMiddleware');
+const User = require('../../models/Users');
 
 // @route   GET /api/admin/users
-// @desc    Get all users
+// @desc    Get all users for admin
 // @access  Admin
 router.get('/', adminMiddleware, async (req, res) => {
   try {
-    const users = await User.find().select('-password');
+    const users = await User.find().sort({ createdAt: -1 });
     res.json(users);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    console.error('Error fetching users:', err.message);
+    res.status(500).send('Server error');
   }
 });
 
@@ -22,23 +22,26 @@ router.get('/', adminMiddleware, async (req, res) => {
 // @access  Admin
 router.delete('/:id', adminMiddleware, async (req, res) => {
   try {
-    // Find user by ID
     const user = await User.findById(req.params.id);
-
+    
     if (!user) {
       return res.status(404).json({ msg: 'User not found' });
     }
-
-    // Prevent deleting of admin users
+    
+    // Prevent admin deletion through API
     if (user.role === 'admin') {
-      return res.status(400).json({ msg: 'Cannot delete admin users' });
+      return res.status(400).json({ msg: 'Admin users cannot be deleted' });
     }
-
-    await user.deleteOne();
+    
+    await user.remove();
+    
     res.json({ msg: 'User removed' });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    console.error('Error deleting user:', err.message);
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+    res.status(500).send('Server error');
   }
 });
 
