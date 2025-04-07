@@ -116,8 +116,10 @@ function Register() {
       
       if (!password) {
         newErrors.password = 'Password is required';
-      } else if (password.length < 6) {
-        newErrors.password = 'Password must be at least 6 characters';
+      } else if (password.length < 8) {
+        newErrors.password = 'Password must be at least 8 characters';
+      } else if (!/(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9])/.test(password)) {
+        newErrors.password = 'Password must include uppercase, lowercase, number and special character';
       }
       
       if (password !== confirmPassword) {
@@ -265,7 +267,7 @@ function Register() {
               value={password}
               onChange={onChange}
               error={!!errors.password}
-              helperText={errors.password || 'Password must be at least 6 characters long'}
+              helperText={errors.password || 'Password must contain at least 8 characters including uppercase, lowercase, number and special character'}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
