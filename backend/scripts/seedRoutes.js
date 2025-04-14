@@ -40,10 +40,30 @@ const seedRoutes = async () => {
       // Generate 2-3 routes per location
       const numRoutes = Math.floor(Math.random() * 2) + 2; // 2-3 routes
       
+      // Set center coordinates based on city
+      let centerLat, centerLng;
+      switch(location.city) {
+        case 'București':
+          centerLat = 44.4268;
+          centerLng = 26.1025;
+          break;
+        case 'Brașov':
+          centerLat = 45.6427;
+          centerLng = 25.5887;
+          break;
+        case 'Cluj-Napoca':
+          centerLat = 46.7712;
+          centerLng = 23.6236;
+          break;
+        default:
+          centerLat = 44.4268;
+          centerLng = 26.1025;
+      }
+      
       for (let i = 1; i <= numRoutes; i++) {
-        // Create route with fake coordinates
-        const centerLat = 44.4268 + (Math.random() * 0.1 - 0.05); // Random around 44.4268
-        const centerLng = 26.1025 + (Math.random() * 0.1 - 0.05); // Random around 26.1025
+        // Create route with coordinates around the city center
+        const routeCenterLat = centerLat + (Math.random() * 0.1 - 0.05);
+        const routeCenterLng = centerLng + (Math.random() * 0.1 - 0.05);
         
         // Generate route coordinates (a simple loop path)
         const coordinates = [];
@@ -54,14 +74,14 @@ const seedRoutes = async () => {
           const radius = 0.01 + (Math.random() * 0.005); // Random radius
           
           coordinates.push({
-            lat: centerLat + Math.sin(angle) * radius,
-            lng: centerLng + Math.cos(angle) * radius
+            lat: routeCenterLat + Math.sin(angle) * radius,
+            lng: routeCenterLng + Math.cos(angle) * radius
           });
         }
         
         const route = {
-          name: `${location.name} Route ${i}`,
-          description: `A beautiful cycling route near ${location.name} in ${location.city}. Perfect for enjoying the scenery and getting some exercise.`,
+          name: `Traseu ${location.city} ${i}`,
+          description: `Un traseu frumos pentru biciclete în apropierea ${location.name} din ${location.city}. Perfect pentru a te bucura de peisaj și a face exerciții fizice.`,
           location: location._id,
           distance: Math.round((5 + Math.random() * 15) * 10) / 10, // 5-20 km
           difficulty: ['beginner', 'intermediate', 'advanced'][Math.floor(Math.random() * 3)],

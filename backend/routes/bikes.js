@@ -300,10 +300,10 @@ router.get('/:id/stock', async (req, res) => {
   try {
     const bike = await Bike.findById(req.params.id);
     if (!bike) {
-      return res.status(404).json({ msg: 'Bike not found' });
+      return res.status(404).json({ msg: 'Bicicleta nu a fost găsită' });
     }
 
-    const { type, locationId } = req.query;
+    const { type, locationId, startDate, endDate } = req.query;
     let stock = {
       purchaseStock: bike.purchaseStock || 0,
       rentalStock: 0
@@ -316,14 +316,59 @@ router.get('/:id/stock', async (req, res) => {
       );
       
       if (locationInventory) {
-        stock.rentalStock = locationInventory.stock || 0;
+        // Verifică disponibilitatea în perioada selectată
+        if (startDate && endDate) {
+          const start = new Date(startDate);
+          const end = new Date(endDate);
+          
+          // Verifică dacă datele sunt valide
+          if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+            return res.status(400).json({ msg: 'Datele de început și sfârșit nu sunt valide' });
+          }
+          
+          // Verifică dacă data de început nu este după data de sfârșit
+          if (start > end) {
+            return res.status(400).json({ msg: 'Data de început nu poate fi după data de sfârșit' });
+          }
+          
+          // Aici vom adăuga verificarea rezervărilor existente
+          const CartItem = require('../models/CartItem');
+          const Order = require('../models/Orders');
+          
+          // Verifică rezervările din coș
+          const cartReservations = await CartItem.countDocuments({
+            bike: bike._id,
+            type: 'rental',
+            location: locationId,
+            $or: [
+              {
+                startDate: { $lte: end },
+                endDate: { $gte: start }
+              }
+            ]
+          });
+          
+          // Verifică comenzile existente
+          const orderReservations = await Order.countDocuments({
+            'items.bike': bike._id,
+            'items.type': 'rental',
+            'items.location': locationId,
+            'items.startDate': { $lte: end },
+            'items.endDate': { $gte: start }
+          });
+          
+          // Calculează stocul disponibil pentru perioada selectată
+          stock.rentalStock = Math.max(0, locationInventory.stock - (cartReservations + orderReservations));
+        } else {
+          stock.rentalStock = locationInventory.stock || 0;
+        }
       }
     }
 
     res.json(stock);
   } catch (err) {
     console.error('Eroare la verificarea stocului:', err);
-    res.status(500).json({ msg: 'Server error' });
+    res.status(500).json({ msg: 'Eroare la server' });
   }
 });
 

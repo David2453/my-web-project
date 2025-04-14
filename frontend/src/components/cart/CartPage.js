@@ -59,7 +59,7 @@ function CartPage() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const { authState } = useContext(AuthContext);
-  const { cartItems, loading: cartLoading, error: cartError, updateCartItem, removeFromCart, clearCart, calculateTotals } = useContext(CartContext);
+  const { cartItems, loading: cartLoading, error: cartError, updateCartItem, removeFromCart, clearCart, calculateTotals, cleanupCart, fetchCart } = useContext(CartContext);
   const { /*fetchOrders*/ } = useContext(OrdersContext);
   // State for checkout
   const [activeStep, setActiveStep] = useState(0);
@@ -87,7 +87,9 @@ function CartPage() {
     cardName: '',
     cardNumber: '',
     expirationDate: '',
-    cvv: ''
+    cvv: '',
+    method: '',
+    expiryDate: ''
   });
 
   // Extract purchase and rental items from cart
@@ -209,17 +211,26 @@ const handlePaymentInputChange = (e) => {
             city: shippingData.city,
             state: shippingData.state,
             zipCode: shippingData.zipCode,
-            country: shippingData.country || 'USA',
+            country: shippingData.country || 'Romania',
             phone: shippingData.phone || ''
           },
-          paymentMethod: "Credit Card",
+          paymentMethod: 'Credit Card',
           paymentDetails: {
-            transactionId: `tr-${Date.now()}`,
-            last4: paymentData.cardNumber.slice(-4)
-          }
+            cardNumber: paymentData.cardNumber,
+            expiryDate: paymentData.expirationDate,
+            cvv: paymentData.cvv
+          },
+          items: cartItems.map(item => ({
+            bikeId: item.bikeId,
+            quantity: item.quantity,
+            type: item.itemType,
+            startDate: item.startDate,
+            endDate: item.endDate,
+            locationId: item.location?.id
+          }))
         };
         
-        console.log('Sending order data:', orderData);
+        console.log('Date trimise către server:', JSON.stringify(orderData, null, 2));
         
         try {
           // Create the order first
@@ -242,6 +253,24 @@ const handlePaymentInputChange = (e) => {
             // The server responded with a status other than 200 range
             errorMessage = orderError.response.data.msg || `Server error (${orderError.response.status})`;
             console.error('Server response:', orderError.response.data);
+            
+            // Dacă eroarea este legată de elemente invalide în coș, curăță coșul
+            if (errorMessage.includes('nu mai este disponibilă') || 
+                errorMessage.includes('nu mai există') || 
+                errorMessage.includes('nu este disponibilă')) {
+              try {
+                // Curăță elementele invalide din coș
+                const cleanupResult = await cleanupCart();
+                console.log('Cart cleanup result:', cleanupResult);
+                
+                // Adaugă un mesaj suplimentar
+                if (cleanupResult.success && cleanupResult.deletedCount > 0) {
+                  errorMessage += `\n${cleanupResult.message}`;
+                }
+              } catch (cleanupError) {
+                console.error('Error cleaning up cart:', cleanupError);
+              }
+            }
           } else if (orderError.request) {
             // The request was made but no response was received
             errorMessage = 'No response from server. Please check your internet connection.';
@@ -250,8 +279,15 @@ const handlePaymentInputChange = (e) => {
           setSnackbar({
             open: true,
             message: errorMessage,
-            severity: 'error'
+            severity: 'error',
+            autoHideDuration: 8000 // Afișează mesajul mai mult timp pentru a permite citirea
           });
+
+          // Dacă eroarea este legată de disponibilitate, mergem înapoi la coș
+          if (errorMessage.includes('nu este disponibilă')) {
+            setActiveStep(0);
+          }
+          
           setLoading(false);
           return;
         }
@@ -947,13 +983,21 @@ const handlePaymentInputChange = (e) => {
       {/* Notification snackbar */}
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={3000}
+        autoHideDuration={snackbar.autoHideDuration || 3000}
         onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
         <Alert 
           onClose={handleCloseSnackbar} 
           severity={snackbar.severity}
           variant="filled"
+          sx={{ 
+            width: '100%',
+            maxWidth: '600px',
+            '& .MuiAlert-message': {
+              whiteSpace: 'pre-line' // Permite afișarea mesajelor pe mai multe linii
+            }
+          }}
         >
           {snackbar.message}
         </Alert>

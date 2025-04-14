@@ -211,4 +211,28 @@ router.delete('/', auth, async (req, res) => {
   }
 });
 
+// @route   DELETE api/cart/cleanup
+// @desc    Remove invalid items from cart (items without associated bike)
+// @access  Private
+router.delete('/cleanup', auth, async (req, res) => {
+  try {
+    // Găsește și șterge elementele din coș care nu au bicicletă asociată
+    const result = await CartItem.deleteMany({
+      user: req.user.id,
+      $or: [
+        { bike: null },
+        { bike: { $exists: false } }
+      ]
+    });
+
+    res.json({ 
+      msg: `${result.deletedCount} elemente invalide au fost eliminate din coș`,
+      deletedCount: result.deletedCount
+    });
+  } catch (err) {
+    console.error('Error cleaning up cart:', err);
+    res.status(500).json({ msg: 'Eroare la curățarea coșului' });
+  }
+});
+
 module.exports = router;

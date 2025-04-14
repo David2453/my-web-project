@@ -242,24 +242,11 @@ const ReviewList = ({ reviews, loading }) => {
           </Box>
           
           <Box sx={{ ml: 7 }}>
-            <Typography variant="subtitle1" fontWeight="medium" gutterBottom>
+            <Typography variant="h6" gutterBottom>
               {review.title}
             </Typography>
             
-            <Typography variant="body1" paragraph sx={{ 
-              fontStyle: 'italic',
-              position: 'relative',
-              pl: 4,
-              '&::before': {
-                content: '"""',
-                position: 'absolute',
-                top: -5,
-                left: 0,
-                fontSize: '2rem',
-                color: theme.palette.grey[300],
-                fontFamily: 'serif'
-              }
-            }}>
+            <Typography variant="body1" paragraph>
               {review.comment}
             </Typography>
             

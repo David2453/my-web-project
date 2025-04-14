@@ -38,23 +38,67 @@ export const CartProvider = ({ children }) => {
       const res = await axios.get('/api/cart');
       console.log('Răspuns preluare coș:', res.data);
       
-      const formattedCartItems = res.data.map(item => ({
-        id: item._id,
-        bikeId: item.bike._id,
-        name: item.bike.name,
-        type: item.bike.type,
-        price: item.bike.price,
-        rentalPrice: item.bike.rentalPrice,
-        image: item.bike.image,
-        quantity: item.quantity,
-        itemType: item.type,
-        startDate: item.startDate,
-        endDate: item.endDate,
-        location: item.location ? {
-          id: item.location._id,
-          name: item.location.name,
-          city: item.location.city
-        } : null
+      // Formatează datele și corectează elementele invalide
+      const formattedCartItems = await Promise.all(res.data.map(async item => {
+        // Dacă bicicleta lipsește, încercăm să o recuperăm
+        if (!item.bike || !item.bike._id) {
+          console.log('Încercare de recuperare a bicicletei pentru elementul:', item._id);
+          try {
+            // Verificăm dacă avem bikeId în item
+            if (item.bikeId) {
+              const bikeResponse = await axios.get(`/api/bikes/${item.bikeId}`);
+              if (bikeResponse.data && bikeResponse.data._id) {
+                // Actualizăm elementul din coș cu bicicleta recuperată
+                await axios.put(`/api/cart/${item._id}`, {
+                  bikeId: bikeResponse.data._id
+                });
+                item.bike = bikeResponse.data;
+              }
+            }
+          } catch (err) {
+            console.error('Eroare la recuperarea bicicletei:', err);
+          }
+        }
+        
+        // Pentru închirieri, verificăm și recuperăm locația dacă lipsește
+        if (item.type === 'rental' && (!item.location || !item.location._id)) {
+          console.log('Încercare de recuperare a locației pentru elementul:', item._id);
+          try {
+            // Verificăm dacă avem locationId în item
+            if (item.locationId) {
+              const locationResponse = await axios.get(`/api/locations/${item.locationId}`);
+              if (locationResponse.data && locationResponse.data._id) {
+                // Actualizăm elementul din coș cu locația recuperată
+                await axios.put(`/api/cart/${item._id}`, {
+                  locationId: locationResponse.data._id
+                });
+                item.location = locationResponse.data;
+              }
+            }
+          } catch (err) {
+            console.error('Eroare la recuperarea locației:', err);
+          }
+        }
+        
+        // Returnăm elementul formatat
+        return {
+          id: item._id,
+          bikeId: item.bike?._id || item.bikeId,
+          name: item.bike?.name || 'Bicicletă necunoscută',
+          type: item.bike?.type || 'standard',
+          price: item.bike?.price || 0,
+          rentalPrice: item.bike?.rentalPrice || 0,
+          image: item.bike?.image || '/images/default-bike.jpg',
+          quantity: item.quantity,
+          itemType: item.type,
+          startDate: item.startDate,
+          endDate: item.endDate,
+          location: item.location ? {
+            id: item.location._id,
+            name: item.location.name,
+            city: item.location.city
+          } : null
+        };
       }));
       
       setCartItems(formattedCartItems);
@@ -62,6 +106,7 @@ export const CartProvider = ({ children }) => {
     } catch (err) {
       console.error('Eroare la preluarea coșului:', err);
       setError('Nu s-a putut încărca coșul');
+      setCartItems([]); // Resetează coșul în caz de eroare
     } finally {
       setLoading(false);
     }
@@ -91,6 +136,12 @@ export const CartProvider = ({ children }) => {
       }
       axios.defaults.headers.common['x-auth-token'] = token;
 
+      // Verifică dacă bicicleta există înainte de a o adăuga în coș
+      const bikeResponse = await axios.get(`/api/bikes/${bikeId}`);
+      if (!bikeResponse.data || !bikeResponse.data._id) {
+        throw new Error('Bicicleta nu a fost găsită');
+      }
+
       // Verifică stocul disponibil
       console.log('Verificare stoc disponibil...');
       const stockCheck = await axios.get(`/api/bikes/${bikeId}/stock`, {
@@ -115,6 +166,14 @@ export const CartProvider = ({ children }) => {
         return false;
       }
 
+      // Verifică dacă locația există pentru închiriere
+      if (itemType === 'rental' && locationId) {
+        const locationResponse = await axios.get(`/api/locations/${locationId}`);
+        if (!locationResponse.data || !locationResponse.data._id) {
+          throw new Error('Locația nu a fost găsită');
+        }
+      }
+
       console.log('Trimitere cerere POST către /api/cart...');
       const data = {
         bikeId,
@@ -129,6 +188,11 @@ export const CartProvider = ({ children }) => {
       
       const res = await axios.post('/api/cart', data);
       console.log('Răspuns adăugare în coș:', res.data);
+      
+      // Verifică dacă răspunsul conține bicicleta
+      if (!res.data.bike || !res.data.bike._id) {
+        throw new Error('Bicicleta nu a fost adăugată corect în coș');
+      }
       
       await fetchCart(); // Reîncarcă coșul după adăugare
       return true;
@@ -201,6 +265,81 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  const validateCartItems = async () => {
+    try {
+      const invalidItems = [];
+      const fixedItems = [];
+      
+      for (const item of cartItems) {
+        try {
+          // Verifică dacă bicicleta există
+          if (!item.bikeId) {
+            console.log('Element fără bikeId:', item);
+            invalidItems.push(item);
+            continue;
+          }
+          
+          // Verifică dacă bicicleta există și are stoc disponibil
+          const stockCheck = await axios.get(`/api/bikes/${item.bikeId}/stock`, {
+            params: {
+              type: item.itemType,
+              locationId: item.location?.id
+            }
+          });
+
+          const { purchaseStock, rentalStock } = stockCheck.data;
+          
+          if (item.itemType === 'purchase' && purchaseStock < item.quantity) {
+            // Ajustează cantitatea în loc să ștergi elementul
+            const newQuantity = Math.min(item.quantity, purchaseStock);
+            if (newQuantity > 0) {
+              await axios.put(`/api/cart/${item.id}`, { quantity: newQuantity });
+              fixedItems.push({ ...item, quantity: newQuantity });
+            } else {
+              invalidItems.push(item);
+            }
+          } else if (item.itemType === 'rental' && rentalStock < item.quantity) {
+            // Ajustează cantitatea în loc să ștergi elementul
+            const newQuantity = Math.min(item.quantity, rentalStock);
+            if (newQuantity > 0) {
+              await axios.put(`/api/cart/${item.id}`, { quantity: newQuantity });
+              fixedItems.push({ ...item, quantity: newQuantity });
+            } else {
+              invalidItems.push(item);
+            }
+          }
+        } catch (err) {
+          console.error(`Eroare la verificarea elementului ${item.id}:`, err);
+          invalidItems.push(item);
+        }
+      }
+
+      // Reîncarcă coșul după validare
+      await fetchCart();
+      
+      return {
+        success: invalidItems.length === 0,
+        message: invalidItems.length > 0 
+          ? `S-au ajustat ${fixedItems.length} elemente și ${invalidItems.length} elemente nu pot fi validate` 
+          : 'Toate elementele din coș sunt valide',
+        fixedCount: fixedItems.length,
+        invalidCount: invalidItems.length,
+        fixedItems,
+        invalidItems
+      };
+    } catch (err) {
+      console.error('Eroare la validarea coșului:', err);
+      return {
+        success: false,
+        message: 'Nu s-a putut valida coșul',
+        fixedCount: 0,
+        invalidCount: 0,
+        fixedItems: [],
+        invalidItems: []
+      };
+    }
+  };
+
   // Calculate totals
   const calculateTotals = () => {
     const purchaseItems = cartItems.filter(item => item.itemType === 'purchase');
@@ -245,7 +384,8 @@ export const CartProvider = ({ children }) => {
         removeFromCart,
         clearCart,
         fetchCart,
-        calculateTotals
+        calculateTotals,
+        validateCartItems
       }}
     >
       {children}

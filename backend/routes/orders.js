@@ -51,25 +51,28 @@ router.get('/:id', auth, async (req, res) => {
     res.status(500).send('Server error');
   }
 });
+
 // @route   POST api/orders
 // @desc    Create a new order from cart
 // @access  Private
 router.post('/', auth, async (req, res) => {
   try {
-    const { shippingAddress, paymentMethod, paymentDetails } = req.body;
+    const { shippingAddress, paymentMethod, paymentDetails, items } = req.body;
     
-    // Validate shipping address for purchases
-    if (!shippingAddress && req.body.hasPurchaseItems) {
-      return res.status(400).json({ msg: 'Shipping address is required for purchase items' });
+    // Validate required fields
+    if (!shippingAddress || !paymentMethod || !paymentDetails) {
+      return res.status(400).json({ 
+        msg: 'Toate câmpurile sunt obligatorii (adresa de livrare, metoda de plată și detaliile plății)' 
+      });
     }
-    
+
     // Get cart items
     const cartItems = await CartItem.find({ user: req.user.id })
       .populate('bike')
       .populate('location');
     
     if (cartItems.length === 0) {
-      return res.status(400).json({ msg: 'Cart is empty' });
+      return res.status(400).json({ msg: 'Coșul este gol' });
     }
     
     // Calculate totals
@@ -77,6 +80,13 @@ router.post('/', auth, async (req, res) => {
     const orderItems = [];
     
     for (const item of cartItems) {
+      // Verifică dacă bicicleta există
+      if (!item.bike) {
+        return res.status(400).json({ 
+          msg: 'O bicicletă din coș nu mai este disponibilă. Vă rugăm să actualizați coșul.' 
+        });
+      }
+
       // Calculate price based on item type
       let itemPrice = 0;
       
@@ -85,16 +95,28 @@ router.post('/', auth, async (req, res) => {
         
         // Update bike stock
         const bike = await Bike.findById(item.bike._id);
+        if (!bike) {
+          return res.status(400).json({ 
+            msg: `Bicicleta ${item.bike.name || ''} nu mai este disponibilă` 
+          });
+        }
+
         if (bike.purchaseStock < item.quantity) {
           return res.status(400).json({ 
-            msg: `Not enough stock for ${bike.name}. Available: ${bike.purchaseStock}` 
+            msg: `Nu există suficient stoc pentru ${bike.name}. Disponibil: ${bike.purchaseStock}` 
           });
         }
         
         bike.purchaseStock -= item.quantity;
         await bike.save();
-      } else {
+      } else if (item.type === 'rental') {
         // For rentals, calculate based on days
+        if (!item.startDate || !item.endDate) {
+          return res.status(400).json({ 
+            msg: 'Datele de început și sfârșit sunt necesare pentru închirieri' 
+          });
+        }
+
         const startDate = new Date(item.startDate);
         const endDate = new Date(item.endDate);
         const days = Math.max(1, Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)));
@@ -102,13 +124,49 @@ router.post('/', auth, async (req, res) => {
         
         // Update rental inventory
         const bike = await Bike.findById(item.bike._id);
+        if (!bike) {
+          return res.status(400).json({ 
+            msg: `Bicicleta ${item.bike.name || ''} nu mai este disponibilă pentru închiriere` 
+          });
+        }
+
+        if (!item.location?._id) {
+          return res.status(400).json({ 
+            msg: `Locația este necesară pentru închirierea bicicletei ${bike.name}` 
+          });
+        }
+
+        // Verifică dacă locația există în inventarul de închiriere
         const locationInventory = bike.rentalInventory.find(
           inventory => inventory.location.toString() === item.location._id.toString()
         );
         
-        if (!locationInventory || locationInventory.stock < 1) {
+        if (!locationInventory) {
           return res.status(400).json({ 
-            msg: `${bike.name} is not available at ${item.location.name}` 
+            msg: `Bicicleta ${bike.name} nu este disponibilă la locația ${item.location.name}. Vă rugăm să alegeți o altă locație.` 
+          });
+        }
+
+        // Verifică dacă există stoc disponibil
+        if (locationInventory.stock < 1) {
+          return res.status(400).json({ 
+            msg: `Bicicleta ${bike.name} nu este disponibilă la ${item.location.name} în perioada ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}. Vă rugăm să alegeți o altă perioadă sau o altă locație.` 
+          });
+        }
+        
+        // Verifică dacă există rezervări suprapuse
+        const overlappingReservations = await Order.find({
+          'items.bike': bike._id,
+          'items.location': item.location._id,
+          'items.type': 'rental',
+          'items.startDate': { $lte: endDate },
+          'items.endDate': { $gte: startDate },
+          status: { $nin: ['cancelled', 'completed'] }
+        });
+        
+        if (overlappingReservations.length > 0) {
+          return res.status(400).json({ 
+            msg: `Bicicleta ${bike.name} este deja rezervată la ${item.location.name} în perioada ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}. Vă rugăm să alegeți o altă perioadă sau o altă locație.` 
           });
         }
         
@@ -121,17 +179,18 @@ router.post('/', auth, async (req, res) => {
       orderItems.push({
         bike: item.bike._id,
         quantity: item.quantity,
-        price: item.type === 'purchase' ? item.bike.price : item.bike.rentalPrice,
+        price: itemPrice,
         type: item.type,
         startDate: item.startDate,
         endDate: item.endDate,
-        location: item.location ? item.location._id : null
+        location: item.location?._id
       });
     }
     
     // Calculate tax and shipping
-    const tax = subtotal * 0.08; // 8% tax
-    const shipping = 15.99; // Fixed shipping fee
+    const purchaseItems = cartItems.filter(item => item.type === 'purchase');
+    const tax = subtotal * 0.19; // 19% TVA
+    const shipping = purchaseItems.length > 0 ? 15.99 : 0;
     const total = subtotal + tax + shipping;
     
     // Create the order
@@ -139,28 +198,30 @@ router.post('/', auth, async (req, res) => {
       user: req.user.id,
       items: orderItems,
       shippingAddress,
-      paymentMethod: paymentMethod || 'Credit Card',
-      paymentDetails,
+      paymentMethod,
+      paymentDetails: {
+        transactionId: `tr-${Date.now()}`,
+        last4: paymentDetails.cardNumber.slice(-4)
+      },
       subtotal,
       tax,
       shipping,
-      total
+      total,
+      status: 'pending'
     });
-    
-    const order = await newOrder.save();
+
+    await newOrder.save();
     
     // Clear the cart
     await CartItem.deleteMany({ user: req.user.id });
     
-    // Populate order details before returning
-    const populatedOrder = await Order.findById(order._id)
-      .populate('items.bike', 'name type image')
-      .populate('items.location', 'name city');
-    
-    res.json(populatedOrder);
+    res.json(newOrder);
   } catch (err) {
-    console.error('Error creating order:', err.message);
-    res.status(500).send('Server error');
+    console.error('Error creating order:', err);
+    res.status(500).json({ 
+      msg: 'A apărut o eroare la crearea comenzii. Vă rugăm să încercați din nou.',
+      error: err.message 
+    });
   }
 });
 

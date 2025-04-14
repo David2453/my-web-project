@@ -85,11 +85,15 @@ const ReviewForm = ({ bikeId, onReviewSubmitted }) => {
     setError(null);
     
     try {
+      // Curățăm textul de orice stilizare CSS
+      const cleanComment = formData.comment.replace(/[^a-zA-Z0-9\s.,!?-]/g, '');
+      const cleanTitle = formData.title.replace(/[^a-zA-Z0-9\s.,!?-]/g, '');
+      
       const response = await axios.post('/api/reviews', {
         bikeId,
         rating: formData.rating,
-        title: formData.title,
-        comment: formData.comment
+        title: cleanTitle,
+        comment: cleanComment
       });
       
       setSuccess(true);

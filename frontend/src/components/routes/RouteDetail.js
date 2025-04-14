@@ -650,60 +650,216 @@ function RouteDetail() {
               </Grid>
             </Paper>
 
-            <Paper elevation={3} sx={{ p: 3, borderRadius: 2, mb: 3 }}>
-              <Typography variant="h6" gutterBottom fontWeight="medium">
-                Route Details
+            <Paper 
+              elevation={3} 
+              sx={{ 
+                p: 3, 
+                borderRadius: 2, 
+                mb: 3,
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
+              }}
+            >
+              <Typography 
+                variant="h5" 
+                gutterBottom 
+                fontWeight="600"
+                sx={{
+                  color: 'primary.main',
+                  borderBottom: '3px solid',
+                  borderColor: 'primary.main',
+                  pb: 1.5,
+                  mb: 3
+                }}
+              >
+                Detalii Traseu
               </Typography>
-              <List dense>
-                <ListItem>
+              <List sx={{ '& .MuiListItem-root': { py: 2.5 } }}>
+                <ListItem 
+                  sx={{ 
+                    backgroundColor: 'rgba(76, 175, 80, 0.04)',
+                    borderRadius: 2,
+                    mb: 1.5
+                  }}
+                >
                   <ListItemIcon>
-                    <BikeIcon color="primary" />
+                    <BikeIcon sx={{ fontSize: 28, color: 'primary.main' }} />
                   </ListItemIcon>
                   <ListItemText 
-                    primary={<Typography fontWeight="medium">Distance</Typography>} 
-                    secondary={`${route.distance} kilometers`} 
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <TimerIcon color="primary" />
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary={<Typography fontWeight="medium">Estimated Time</Typography>} 
-                    secondary={formatTime(route.estimatedTime)} 
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <TerrainIcon color="primary" />
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary={<Typography fontWeight="medium">Elevation Gain</Typography>} 
-                    secondary={`${route.elevationGain} meters`} 
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <SpeedIcon color="primary" />
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary={<Typography fontWeight="medium">Difficulty</Typography>} 
+                    primary={
+                      <Typography 
+                        fontWeight="600" 
+                        sx={{ 
+                          color: 'text.primary', 
+                          fontSize: '1.1rem',
+                          mb: 0.5
+                        }}
+                      >
+                        Distanță
+                      </Typography>
+                    } 
                     secondary={
-                      <Chip 
-                        label={route.difficulty.charAt(0).toUpperCase() + route.difficulty.slice(1)} 
-                        size="small"
-                        color={getDifficultyColor(route.difficulty)}
-                      />
+                      <Typography 
+                        variant="body1" 
+                        sx={{ 
+                          color: '#2E7D32',
+                          fontSize: '1.2rem',
+                          fontWeight: 500
+                        }}
+                      >
+                        {`${route.distance} kilometri`}
+                      </Typography>
                     } 
                   />
                 </ListItem>
-                <ListItem>
+                <ListItem 
+                  sx={{ 
+                    backgroundColor: 'rgba(76, 175, 80, 0.04)',
+                    borderRadius: 2,
+                    mb: 1.5
+                  }}
+                >
                   <ListItemIcon>
-                    <RepeatIcon color="primary" />
+                    <TimerIcon sx={{ fontSize: 28, color: 'primary.main' }} />
                   </ListItemIcon>
                   <ListItemText 
-                    primary={<Typography fontWeight="medium">Route Type</Typography>} 
-                    secondary={route.routeType.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} 
+                    primary={
+                      <Typography 
+                        fontWeight="600" 
+                        sx={{ 
+                          color: 'text.primary', 
+                          fontSize: '1.1rem',
+                          mb: 0.5
+                        }}
+                      >
+                        Timp Estimat
+                      </Typography>
+                    } 
+                    secondary={
+                      <Typography 
+                        variant="body1" 
+                        sx={{ 
+                          color: '#2E7D32',
+                          fontSize: '1.2rem',
+                          fontWeight: 500
+                        }}
+                      >
+                        {formatTime(route.estimatedTime)}
+                      </Typography>
+                    } 
+                  />
+                </ListItem>
+                <ListItem 
+                  sx={{ 
+                    backgroundColor: 'rgba(76, 175, 80, 0.04)',
+                    borderRadius: 2,
+                    mb: 1.5
+                  }}
+                >
+                  <ListItemIcon>
+                    <TerrainIcon sx={{ fontSize: 28, color: 'primary.main' }} />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={
+                      <Typography 
+                        fontWeight="600" 
+                        sx={{ 
+                          color: 'text.primary', 
+                          fontSize: '1.1rem',
+                          mb: 0.5
+                        }}
+                      >
+                        Diferență de Nivel
+                      </Typography>
+                    } 
+                    secondary={
+                      <Typography 
+                        variant="body1" 
+                        sx={{ 
+                          color: '#2E7D32',
+                          fontSize: '1.2rem',
+                          fontWeight: 500
+                        }}
+                      >
+                        {`${route.elevationGain} metri`}
+                      </Typography>
+                    } 
+                  />
+                </ListItem>
+                <ListItem 
+                  sx={{ 
+                    backgroundColor: 'rgba(76, 175, 80, 0.04)',
+                    borderRadius: 2,
+                    mb: 1.5
+                  }}
+                >
+                  <ListItemIcon>
+                    <SpeedIcon sx={{ fontSize: 28, color: 'primary.main' }} />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={
+                      <Typography 
+                        fontWeight="600" 
+                        sx={{ 
+                          color: 'text.primary', 
+                          fontSize: '1.1rem',
+                          mb: 0.5
+                        }}
+                      >
+                        Dificultate
+                      </Typography>
+                    } 
+                    secondary={
+                      <Box sx={{ mt: 0.5 }}>
+                        <Chip 
+                          label={route.difficulty.charAt(0).toUpperCase() + route.difficulty.slice(1)} 
+                          size="large"
+                          color={getDifficultyColor(route.difficulty)}
+                          sx={{ 
+                            fontWeight: '600',
+                            fontSize: '1rem',
+                            py: 1
+                          }}
+                        />
+                      </Box>
+                    } 
+                  />
+                </ListItem>
+                <ListItem 
+                  sx={{ 
+                    backgroundColor: 'rgba(76, 175, 80, 0.04)',
+                    borderRadius: 2,
+                    mb: 1.5
+                  }}
+                >
+                  <ListItemIcon>
+                    <RepeatIcon sx={{ fontSize: 28, color: 'primary.main' }} />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={
+                      <Typography 
+                        fontWeight="600" 
+                        sx={{ 
+                          color: 'text.primary', 
+                          fontSize: '1.1rem',
+                          mb: 0.5
+                        }}
+                      >
+                        Tip Traseu
+                      </Typography>
+                    } 
+                    secondary={
+                      <Typography 
+                        variant="body1" 
+                        sx={{ 
+                          color: '#2E7D32',
+                          fontSize: '1.2rem',
+                          fontWeight: 500
+                        }}
+                      >
+                        {route.routeType.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </Typography>
+                    } 
                   />
                 </ListItem>
               </List>

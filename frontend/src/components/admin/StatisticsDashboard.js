@@ -26,8 +26,51 @@ import {
   Star as StarIcon,
   AttachMoney as MoneyIcon,
 } from '@mui/icons-material';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js';
+import { Line, Bar, Pie, Doughnut } from 'react-chartjs-2';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+// Înregistrăm componentele Chart.js
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+// Adăugăm opțiuni globale pentru Chart.js pentru o calitate mai bună
+ChartJS.defaults.font.family = '"Roboto", "Helvetica", "Arial", sans-serif';
+ChartJS.defaults.font.size = 14;
+ChartJS.defaults.plugins.tooltip.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+ChartJS.defaults.plugins.tooltip.padding = 12;
+ChartJS.defaults.plugins.tooltip.cornerRadius = 8;
+ChartJS.defaults.plugins.tooltip.titleFont.size = 16;
+ChartJS.defaults.plugins.tooltip.bodyFont.size = 14;
+ChartJS.defaults.devicePixelRatio = 2;
+
+const COLORS = [
+  'rgba(54, 162, 235, 0.8)',
+  'rgba(75, 192, 192, 0.8)',
+  'rgba(255, 206, 86, 0.8)',
+  'rgba(255, 99, 132, 0.8)',
+  'rgba(153, 102, 255, 0.8)',
+  'rgba(255, 159, 64, 0.8)'
+];
 
 const StatisticsDashboard = () => {
   const [statsTab, setStatsTab] = useState(0);
@@ -197,6 +240,80 @@ const StatisticsDashboard = () => {
     }).format(value);
   };
 
+  const revenueChartData = {
+    labels: statistics.revenue.monthly.map(month => month.name),
+    datasets: [
+      {
+        label: 'Venit lunar',
+        data: statistics.revenue.monthly.map(month => month.revenue),
+        fill: true,
+        borderColor: 'rgb(75, 192, 192)',
+        backgroundColor: 'rgba(75, 192, 192, 0.1)',
+        borderWidth: 2,
+        tension: 0.4,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBackgroundColor: 'rgb(75, 192, 192)'
+      }
+    ]
+  };
+
+  const salesChartData = {
+    labels: salesStats.monthlySales.map(month => month.name),
+    datasets: [
+      {
+        label: 'Cumpărări',
+        data: salesStats.monthlySales.map(month => month.purchases),
+        backgroundColor: 'rgba(54, 162, 235, 0.8)',
+        borderColor: 'rgb(54, 162, 235)',
+        borderWidth: 1,
+        borderRadius: 4,
+        barThickness: 12,
+      },
+      {
+        label: 'Închirieri',
+        data: salesStats.monthlySales.map(month => month.rentals),
+        backgroundColor: 'rgba(255, 99, 132, 0.8)',
+        borderColor: 'rgb(255, 99, 132)',
+        borderWidth: 1,
+        borderRadius: 4,
+        barThickness: 12,
+      }
+    ]
+  };
+
+  const salesByTypeData = {
+    labels: salesStats.salesByType.map(item => item._id.charAt(0).toUpperCase() + item._id.slice(1)),
+    datasets: [
+      {
+        data: salesStats.salesByType.map(item => item.revenue),
+        backgroundColor: [
+          'rgba(54, 162, 235, 0.8)',
+          'rgba(255, 99, 132, 0.8)'
+        ],
+        borderColor: [
+          'rgb(54, 162, 235)',
+          'rgb(255, 99, 132)'
+        ],
+        borderWidth: 2,
+        hoverOffset: 4
+      }
+    ]
+  };
+
+  const bikeTypeData = {
+    labels: salesStats.salesByBikeType.map(item => item._id),
+    datasets: [
+      {
+        data: salesStats.salesByBikeType.map(item => item.revenue),
+        backgroundColor: COLORS,
+        borderColor: COLORS.map(color => color.replace('0.8', '1')),
+        borderWidth: 2,
+        hoverOffset: 4
+      }
+    ]
+  };
+
   return (
     <Box>
       {/* Key Metrics Cards */}
@@ -303,35 +420,63 @@ const StatisticsDashboard = () => {
           <Grid item xs={12} md={8}>
             <Paper sx={{ p: 3, height: '100%' }}>
               <Typography variant="h6" gutterBottom>
-                Monthly Revenue
+                Venit lunar
               </Typography>
-              <Box sx={{ p: 2, mt: 2 }}>
-                <Typography variant="h4" sx={{ mb: 2 }}>
-                  {formatCurrency(statistics.revenue.monthly.reduce((sum, month) => sum + month.revenue, 0))}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Total revenue across all months
-                </Typography>
-                
-                {/* Instead of chart, display a revenue table */}
-                <TableContainer sx={{ mt: 3 }}>
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Month</TableCell>
-                        <TableCell align="right">Revenue</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {statistics.revenue.monthly.map((month) => (
-                        <TableRow key={month.month}>
-                          <TableCell>{month.name}</TableCell>
-                          <TableCell align="right">{formatCurrency(month.revenue)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+              <Box sx={{ height: 300, p: 2 }}>
+                <Line 
+                  data={revenueChartData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: 'top',
+                        labels: {
+                          padding: 20,
+                          font: {
+                            size: 14
+                          }
+                        }
+                      },
+                      title: {
+                        display: true,
+                        text: 'Evoluția veniturilor lunare',
+                        font: {
+                          size: 16,
+                          weight: 'bold'
+                        },
+                        padding: 20
+                      },
+                      tooltip: {
+                        mode: 'index',
+                        intersect: false
+                      }
+                    },
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        grid: {
+                          drawBorder: false
+                        },
+                        ticks: {
+                          font: {
+                            size: 12
+                          }
+                        }
+                      },
+                      x: {
+                        grid: {
+                          display: false
+                        },
+                        ticks: {
+                          font: {
+                            size: 12
+                          }
+                        }
+                      }
+                    }
+                  }}
+                />
               </Box>
             </Paper>
           </Grid>
@@ -397,32 +542,64 @@ const StatisticsDashboard = () => {
           <Grid item xs={12}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom>
-                Sales Trend (Last 12 Months)
+                Tendințe vânzări (Ultimele 12 luni)
               </Typography>
-              
-              {/* Display sales trends as a table instead of chart */}
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Month</TableCell>
-                      <TableCell align="right">Purchases</TableCell>
-                      <TableCell align="right">Rentals</TableCell>
-                      <TableCell align="right">Revenue</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {salesStats.monthlySales.map((month) => (
-                      <TableRow key={month.date}>
-                        <TableCell>{month.name}</TableCell>
-                        <TableCell align="right">{month.purchases}</TableCell>
-                        <TableCell align="right">{month.rentals}</TableCell>
-                        <TableCell align="right">{formatCurrency(month.revenue)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+              <Box sx={{ height: 300, p: 2 }}>
+                <Bar
+                  data={salesChartData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: 'top',
+                        labels: {
+                          padding: 20,
+                          font: {
+                            size: 14
+                          }
+                        }
+                      },
+                      title: {
+                        display: true,
+                        text: 'Vânzări și închirieri lunare',
+                        font: {
+                          size: 16,
+                          weight: 'bold'
+                        },
+                        padding: 20
+                      },
+                      tooltip: {
+                        mode: 'index',
+                        intersect: false
+                      }
+                    },
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        grid: {
+                          drawBorder: false
+                        },
+                        ticks: {
+                          font: {
+                            size: 12
+                          }
+                        }
+                      },
+                      x: {
+                        grid: {
+                          display: false
+                        },
+                        ticks: {
+                          font: {
+                            size: 12
+                          }
+                        }
+                      }
+                    }
+                  }}
+                />
+              </Box>
             </Paper>
           </Grid>
 
@@ -430,38 +607,39 @@ const StatisticsDashboard = () => {
           <Grid item xs={12} md={6}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom>
-                Sales by Order Type
+                Distribuția vânzărilor după tip
               </Typography>
-              
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Type</TableCell>
-                      <TableCell align="right">Orders</TableCell>
-                      <TableCell align="right">Revenue</TableCell>
-                      <TableCell align="right">Percentage</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {salesStats.salesByType.map((item) => {
-                      const totalOrders = salesStats.salesByType.reduce((sum, i) => sum + i.count, 0);
-                      const percentage = (item.count / totalOrders * 100).toFixed(1);
-                      
-                      return (
-                        <TableRow key={item._id}>
-                          <TableCell>
-                            {item._id.charAt(0).toUpperCase() + item._id.slice(1)}
-                          </TableCell>
-                          <TableCell align="right">{item.count}</TableCell>
-                          <TableCell align="right">{formatCurrency(item.revenue)}</TableCell>
-                          <TableCell align="right">{percentage}%</TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+              <Box sx={{ height: 300, p: 2 }}>
+                <Doughnut
+                  data={salesByTypeData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: 'right',
+                        labels: {
+                          padding: 20,
+                          font: {
+                            size: 14
+                          }
+                        }
+                      },
+                      tooltip: {
+                        callbacks: {
+                          label: function(context) {
+                            const value = context.raw;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${context.label}: ${formatCurrency(value)} (${percentage}%)`;
+                          }
+                        }
+                      }
+                    },
+                    cutout: '60%'
+                  }}
+                />
+              </Box>
             </Paper>
           </Grid>
 
@@ -469,29 +647,38 @@ const StatisticsDashboard = () => {
           <Grid item xs={12} md={6}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom>
-                Revenue by Bike Type
+                Venituri după tipul de bicicletă
               </Typography>
-              
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Bike Type</TableCell>
-                      <TableCell align="right">Orders</TableCell>
-                      <TableCell align="right">Revenue</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {salesStats.salesByBikeType.map((item) => (
-                      <TableRow key={item._id}>
-                        <TableCell>{item._id}</TableCell>
-                        <TableCell align="right">{item.count}</TableCell>
-                        <TableCell align="right">{formatCurrency(item.revenue)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+              <Box sx={{ height: 300, p: 2 }}>
+                <Pie
+                  data={bikeTypeData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: 'right',
+                        labels: {
+                          padding: 20,
+                          font: {
+                            size: 14
+                          }
+                        }
+                      },
+                      tooltip: {
+                        callbacks: {
+                          label: function(context) {
+                            const value = context.raw;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${context.label}: ${formatCurrency(value)} (${percentage}%)`;
+                          }
+                        }
+                      }
+                    }
+                  }}
+                />
+              </Box>
             </Paper>
           </Grid>
         </Grid>
@@ -503,24 +690,42 @@ const StatisticsDashboard = () => {
           {/* Top Selling Bikes */}
           <Grid item xs={12} md={6}>
             <Paper sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Top Selling Bikes
+              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+                <BikeIcon sx={{ mr: 1 }} />
+                Cele mai vândute biciclete
               </Typography>
               <TableContainer>
                 <Table>
                   <TableHead>
                     <TableRow>
-                      <TableCell>Bike Name</TableCell>
-                      <TableCell>Type</TableCell>
-                      <TableCell align="right">Units Sold</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Nume bicicletă</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Tip</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 'bold' }}>Unități vândute</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {statistics.topProducts.purchases.map((bike) => (
-                      <TableRow key={bike._id}>
-                        <TableCell>{bike.name}</TableCell>
+                      <TableRow 
+                        key={bike._id}
+                        sx={{ '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' } }}
+                      >
+                        <TableCell sx={{ color: 'primary.main' }}>{bike.name}</TableCell>
                         <TableCell>{bike.type}</TableCell>
-                        <TableCell align="right">{bike.totalSold}</TableCell>
+                        <TableCell align="right">
+                          <Typography 
+                            component="span" 
+                            sx={{ 
+                              bgcolor: 'primary.light',
+                              color: 'primary.main',
+                              px: 2,
+                              py: 0.5,
+                              borderRadius: 1,
+                              display: 'inline-block'
+                            }}
+                          >
+                            {bike.totalSold}
+                          </Typography>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -532,24 +737,42 @@ const StatisticsDashboard = () => {
           {/* Top Rental Bikes */}
           <Grid item xs={12} md={6}>
             <Paper sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Top Rental Bikes
+              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+                <BikeIcon sx={{ mr: 1 }} />
+                Cele mai închiriate biciclete
               </Typography>
               <TableContainer>
                 <Table>
                   <TableHead>
                     <TableRow>
-                      <TableCell>Bike Name</TableCell>
-                      <TableCell>Type</TableCell>
-                      <TableCell align="right">Times Rented</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Nume bicicletă</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Tip</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 'bold' }}>Total închirieri</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {statistics.topProducts.rentals.map((bike) => (
-                      <TableRow key={bike._id}>
-                        <TableCell>{bike.name}</TableCell>
+                      <TableRow 
+                        key={bike._id}
+                        sx={{ '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' } }}
+                      >
+                        <TableCell sx={{ color: 'primary.main' }}>{bike.name}</TableCell>
                         <TableCell>{bike.type}</TableCell>
-                        <TableCell align="right">{bike.totalRented}</TableCell>
+                        <TableCell align="right">
+                          <Typography 
+                            component="span" 
+                            sx={{ 
+                              bgcolor: 'success.light',
+                              color: 'success.main',
+                              px: 2,
+                              py: 0.5,
+                              borderRadius: 1,
+                              display: 'inline-block'
+                            }}
+                          >
+                            {bike.totalRented}
+                          </Typography>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -561,16 +784,35 @@ const StatisticsDashboard = () => {
           {/* Sales by Bike Type Summary */}
           <Grid item xs={12}>
             <Paper sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Sales Summary by Bike Type
+              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+                <MoneyIcon sx={{ mr: 1 }} />
+                Sumar vânzări după tipul de bicicletă
               </Typography>
-              <Box sx={{ p: 2, mt: 2 }}>
-                <Typography variant="subtitle1" gutterBottom>
-                  Total Orders: {salesStats.salesByBikeType.reduce((sum, item) => sum + item.count, 0)}
-                </Typography>
-                <Typography variant="subtitle1">
-                  Total Revenue: {formatCurrency(salesStats.salesByBikeType.reduce((sum, item) => sum + item.revenue, 0))}
-                </Typography>
+              <Box sx={{ 
+                p: 3, 
+                mt: 2, 
+                display: 'flex', 
+                justifyContent: 'space-around',
+                bgcolor: 'background.default',
+                borderRadius: 2
+              }}>
+                <Box>
+                  <Typography variant="subtitle1" gutterBottom color="text.secondary">
+                    Total comenzi
+                  </Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                    {salesStats.salesByBikeType.reduce((sum, item) => sum + item.count, 0)}
+                  </Typography>
+                </Box>
+                <Divider orientation="vertical" flexItem sx={{ mx: 4 }} />
+                <Box>
+                  <Typography variant="subtitle1" gutterBottom color="text.secondary">
+                    Venit total
+                  </Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'success.main' }}>
+                    {formatCurrency(salesStats.salesByBikeType.reduce((sum, item) => sum + item.revenue, 0))}
+                  </Typography>
+                </Box>
               </Box>
             </Paper>
           </Grid>
