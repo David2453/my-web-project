@@ -284,7 +284,7 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(404).json({ msg: 'Bike not found' });
     }
 
-    await bike.remove();
+    await bike.deleteOne();
     res.json({ msg: 'Bike removed' });
   } catch (err) {
     console.error(err.message);
@@ -292,6 +292,38 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(404).json({ msg: 'Bike not found' });
     }
     res.status(500).send('Server error');
+  }
+});
+
+// Get bike stock availability
+router.get('/:id/stock', async (req, res) => {
+  try {
+    const bike = await Bike.findById(req.params.id);
+    if (!bike) {
+      return res.status(404).json({ msg: 'Bike not found' });
+    }
+
+    const { type, locationId } = req.query;
+    let stock = {
+      purchaseStock: bike.purchaseStock || 0,
+      rentalStock: 0
+    };
+
+    if (type === 'rental' && locationId) {
+      // Verifică disponibilitatea pentru închiriere la locația specificată
+      const locationInventory = bike.rentalInventory.find(
+        inv => inv.location.toString() === locationId
+      );
+      
+      if (locationInventory) {
+        stock.rentalStock = locationInventory.stock || 0;
+      }
+    }
+
+    res.json(stock);
+  } catch (err) {
+    console.error('Eroare la verificarea stocului:', err);
+    res.status(500).json({ msg: 'Server error' });
   }
 });
 

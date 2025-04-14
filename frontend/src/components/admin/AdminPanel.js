@@ -281,7 +281,7 @@ function AdminPanel() {
   const handleSubmitBike = async (formData) => {
     try {
       const headers = {
-        'x-auth-token': localStorage.getItem('token')
+        'x-auth-token': localStorage.getItem('token'),
       };
       let response;
       if (currentBike) {
@@ -451,6 +451,7 @@ function AdminPanel() {
               <Table>
                 <TableHead>
                   <TableRow>
+                    <TableCell>Imagine</TableCell>
                     <TableCell>Name</TableCell>
                     <TableCell>Type</TableCell>
                     <TableCell>Purchase Price</TableCell>
@@ -462,7 +463,7 @@ function AdminPanel() {
                 <TableBody>
                   {bikes.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
+                      <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
                         <Typography variant="body1" color="text.secondary">
                           No bikes found
                         </Typography>
@@ -471,6 +472,34 @@ function AdminPanel() {
                   ) : (
                     bikes.map((bike) => (
                       <TableRow key={bike._id}>
+                        <TableCell>
+                          {bike.image ? (
+                            <img 
+                              src={bike.image} 
+                              alt={bike.name} 
+                              style={{ 
+                                width: '50px', 
+                                height: '50px', 
+                                objectFit: 'cover',
+                                borderRadius: '4px'
+                              }} 
+                            />
+                          ) : (
+                            <Box 
+                              sx={{ 
+                                width: '50px', 
+                                height: '50px', 
+                                backgroundColor: '#f0f0f0',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderRadius: '4px'
+                              }}
+                            >
+                              <BikeIcon color="disabled" />
+                            </Box>
+                          )}
+                        </TableCell>
                         <TableCell>{bike.name}</TableCell>
                         <TableCell>
                           <Chip 

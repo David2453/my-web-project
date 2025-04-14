@@ -4,15 +4,14 @@ import axios from 'axios';
 import { AuthContext } from './AuthContext';
 
 export const OrdersContext = createContext();
+
 export const OrdersProvider = ({ children }) => {
   const { authState } = useContext(AuthContext);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
 
   useEffect(() => {
-    // Only fetch orders if user is authenticated
     if (authState.isAuthenticated) {
       fetchOrders();
     } else {
@@ -23,44 +22,64 @@ export const OrdersProvider = ({ children }) => {
 
   const fetchOrders = async () => {
     setLoading(true);
+    setError(null);
     try {
+      console.log('Încercare de preluare comenzi...');
+      console.log('Token prezent:', !!axios.defaults.headers.common['x-auth-token']);
+      
+      // Verifică și setează token-ul pentru toate cererile
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Token-ul de autentificare lipsește');
+      }
+      axios.defaults.headers.common['x-auth-token'] = token;
+      
       const res = await axios.get('/api/orders');
+      console.log('Răspuns preluare comenzi:', res.data);
       
       // Transform the data to match our frontend structure
-      const formattedOrders = res.data.map(order => ({
-        id: order._id,
-        items: order.items.map(item => ({
-          id: item._id,
-          bikeId: item.bike._id,
-          name: item.bike.name,
-          type: item.bike.type,
-          itemType: item.type, // 'purchase' or 'rental'
-          price: item.price,
-          quantity: item.quantity,
-          startDate: item.startDate,
-          endDate: item.endDate,
-          location: item.location ? {
-            id: item.location._id,
-            name: item.location.name,
-            city: item.location.city
-          } : null,
-          image: item.bike.image
-        })),
-        status: order.status,
-        shippingAddress: order.shippingAddress,
-        paymentMethod: order.paymentMethod,
-        subtotal: order.subtotal,
-        tax: order.tax,
-        shipping: order.shipping,
-        total: order.total,
-        createdAt: order.createdAt
-      }));
+      const formattedOrders = res.data
+        .filter(order => order && order.items) // Verificăm dacă order și order.items există
+        .map(order => ({
+          id: order._id,
+          items: order.items
+            .filter(item => item && item.bike) // Verificăm dacă item și item.bike există
+            .map(item => ({
+              id: item._id || '',
+              bikeId: item.bike?._id || '',
+              name: item.bike?.name || 'Produs indisponibil',
+              type: item.bike?.type || '',
+              itemType: item.type || '',
+              price: item.price || 0,
+              quantity: item.quantity || 1,
+              startDate: item.startDate || null,
+              endDate: item.endDate || null,
+              location: item.location ? {
+                id: item.location._id || '',
+                name: item.location.name || '',
+                city: item.location.city || ''
+              } : null,
+              image: item.bike?.image || ''
+            })),
+          status: order.status || 'pending',
+          shippingAddress: order.shippingAddress || null,
+          paymentMethod: order.paymentMethod || '',
+          subtotal: order.subtotal || 0,
+          tax: order.tax || 0,
+          shipping: order.shipping || 0,
+          total: order.total || 0,
+          createdAt: order.createdAt || new Date().toISOString()
+        }));
       
+      console.log('Comenzi formatate:', formattedOrders);
       setOrders(formattedOrders);
       setError(null);
     } catch (err) {
-      console.error('Error fetching orders:', err);
-      setError('Failed to load orders');
+      console.error('Eroare la preluarea comenzilor:', err);
+      const errorMessage = err.response?.data?.msg || err.message || 'Nu s-au putut încărca comenzile';
+      console.error('Mesaj de eroare:', errorMessage);
+      setError(errorMessage);
+      setOrders([]);
     } finally {
       setLoading(false);
     }
@@ -72,20 +91,22 @@ export const OrdersProvider = ({ children }) => {
     
     return orders
       .flatMap(order => 
-        order.items
+        (order.items || [])
           .filter(item => 
+            item && 
             item.itemType === 'rental' && 
+            item.endDate && 
             new Date(item.endDate) >= today
           )
           .map(item => ({
             id: `${order.id}-${item.id}`,
             orderId: order.id,
-            bikeId: item.bikeId,
-            bikeName: item.name,
+            bikeId: item.bikeId || '',
+            bikeName: item.name || '',
             startDate: item.startDate,
             endDate: item.endDate,
-            location: item.location,
-            status: order.status,
+            location: item.location || null,
+            status: order.status || '',
             createdAt: order.createdAt
           }))
       )
@@ -95,7 +116,7 @@ export const OrdersProvider = ({ children }) => {
   // Function to get recent orders
   const getRecentOrders = (limit = 5) => {
     return [...orders]
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
       .slice(0, limit);
   };
 

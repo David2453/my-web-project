@@ -15,8 +15,10 @@ import {
   Chip,
   Box,
   Typography,
-  InputAdornment
+  InputAdornment,
+  IconButton
 } from '@mui/material';
+import { PhotoCamera, Delete } from '@mui/icons-material';
 
 const BikeForm = ({ open, handleClose, bike, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -31,6 +33,8 @@ const BikeForm = ({ open, handleClose, bike, onSubmit }) => {
   });
   
   const [featureInput, setFeatureInput] = useState('');
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
 
   useEffect(() => {
     if (bike) {
@@ -44,6 +48,11 @@ const BikeForm = ({ open, handleClose, bike, onSubmit }) => {
         features: bike.features || [],
         purchaseStock: bike.purchaseStock || 0
       });
+      
+      // Dacă există o imagine, setează preview-ul
+      if (bike.image) {
+        setImagePreview(bike.image);
+      }
     }
   }, [bike]);
 
@@ -51,6 +60,29 @@ const BikeForm = ({ open, handleClose, bike, onSubmit }) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
+    });
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedImage(file);
+      
+      // Creează un URL pentru preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview('');
+    setFormData({
+      ...formData,
+      image: ''
     });
   };
 
@@ -74,7 +106,24 @@ const BikeForm = ({ open, handleClose, bike, onSubmit }) => {
   };
 
   const handleSubmit = () => {
-    onSubmit(formData);
+    // Creează un obiect FormData pentru a trimite și fișierul
+    const formDataToSubmit = new FormData();
+    
+    // Adaugă toate câmpurile din formData
+    Object.keys(formData).forEach(key => {
+      if (key === 'features') {
+        formDataToSubmit.append(key, JSON.stringify(formData[key]));
+      } else {
+        formDataToSubmit.append(key, formData[key]);
+      }
+    });
+    
+    // Adaugă imaginea dacă există
+    if (selectedImage) {
+      formDataToSubmit.append('image', selectedImage);
+    }
+    
+    onSubmit(formDataToSubmit);
     handleClose();
   };
 
@@ -151,13 +200,44 @@ const BikeForm = ({ open, handleClose, bike, onSubmit }) => {
             />
           </Grid>
           <Grid item xs={12}>
-            <TextField
-              name="image"
-              label="Image URL"
-              fullWidth
-              value={formData.image}
-              onChange={handleChange}
-            />
+            <Typography variant="subtitle1" gutterBottom>Imagine Bicicletă</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<PhotoCamera />}
+                sx={{ mr: 2 }}
+              >
+                Încarcă Imagine
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={handleImageChange}
+                />
+              </Button>
+              {imagePreview && (
+                <IconButton color="error" onClick={handleRemoveImage}>
+                  <Delete />
+                </IconButton>
+              )}
+            </Box>
+            {imagePreview && (
+              <Box sx={{ mt: 2, mb: 2 }}>
+                <img 
+                  src={imagePreview} 
+                  alt="Preview" 
+                  style={{ 
+                    maxWidth: '100%', 
+                    maxHeight: '200px', 
+                    objectFit: 'contain',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    padding: '5px'
+                  }} 
+                />
+              </Box>
+            )}
           </Grid>
           <Grid item xs={12} sm={6}>
             <TextField

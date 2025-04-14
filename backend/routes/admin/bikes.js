@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const adminMiddleware = require('../../middleware/adminMiddleware');
+const upload = require('../../middleware/uploadMiddleware');
 const Bike = require('../../models/Bikes');
 
 // @route   GET /api/admin/bikes
@@ -20,9 +21,16 @@ router.get('/', adminMiddleware, async (req, res) => {
 // @route   POST /api/admin/bikes
 // @desc    Create a new bike
 // @access  Admin
-router.post('/', adminMiddleware, async (req, res) => {
+router.post('/', adminMiddleware, upload.single('image'), async (req, res) => {
   try {
-    const newBike = new Bike(req.body);
+    // Construiește obiectul bicicletei cu datele din formular
+    const bikeData = {
+      ...req.body,
+      // Dacă există un fișier încărcat, adaugă calea către imagine
+      image: req.file ? `/uploads/bikes/${req.file.filename}` : ''
+    };
+    
+    const newBike = new Bike(bikeData);
     const bike = await newBike.save();
     res.json(bike);
   } catch (err) {
@@ -34,11 +42,19 @@ router.post('/', adminMiddleware, async (req, res) => {
 // @route   PUT /api/admin/bikes/:id
 // @desc    Update a bike
 // @access  Admin
-router.put('/:id', adminMiddleware, async (req, res) => {
+router.put('/:id', adminMiddleware, upload.single('image'), async (req, res) => {
   try {
+    // Construiește obiectul de actualizare
+    const updateData = { ...req.body };
+    
+    // Dacă există un fișier nou încărcat, actualizează calea către imagine
+    if (req.file) {
+      updateData.image = `/uploads/bikes/${req.file.filename}`;
+    }
+    
     const bike = await Bike.findByIdAndUpdate(
       req.params.id, 
-      req.body,
+      updateData,
       { new: true }
     );
     
@@ -67,7 +83,7 @@ router.delete('/:id', adminMiddleware, async (req, res) => {
       return res.status(404).json({ msg: 'Bike not found' });
     }
     
-    await bike.remove();
+    await bike.deleteOne();
     
     res.json({ msg: 'Bike removed' });
   } catch (err) {

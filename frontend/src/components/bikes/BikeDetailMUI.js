@@ -249,6 +249,7 @@ const handleTabChange = (event, newValue) => {
   // Handle Add to Cart
   const handleAddToCart = async () => {
     if (!authState.isAuthenticated) {
+      console.log('Încercare de adăugare în coș fără autentificare');
       setSnackbar({
         open: true,
         message: 'Te rugăm să te autentifici pentru a adăuga articole în coș',
@@ -261,6 +262,7 @@ const handleTabChange = (event, newValue) => {
     try {
       if (mode === 'rental') {
         if (!startDate || !endDate) {
+          console.log('Lipsesc datele pentru închiriere:', { startDate, endDate });
           setSnackbar({
             open: true,
             message: 'Te rugăm să selectezi data de început și de sfârșit',
@@ -271,6 +273,7 @@ const handleTabChange = (event, newValue) => {
         }
         
         if (!locationId) {
+          console.log('Lipsește locația pentru închiriere');
           setSnackbar({
             open: true,
             message: 'Te rugăm să selectezi o locație pentru închiriere',
@@ -285,13 +288,17 @@ const handleTabChange = (event, newValue) => {
       const formattedStartDate = mode === 'rental' ? new Date(startDate).toISOString() : null;
       const formattedEndDate = mode === 'rental' ? new Date(endDate).toISOString() : null;
       
-      console.log("Adăugare în coș:", {
+      console.log("Date pentru adăugarea în coș:", {
         id, 
         mode, 
         quantity, 
         startDate: formattedStartDate, 
         endDate: formattedEndDate, 
-        locationId
+        locationId,
+        authState: {
+          isAuthenticated: authState.isAuthenticated,
+          token: !!localStorage.getItem('token')
+        }
       });
       
       const success = await addToCart(
@@ -302,6 +309,8 @@ const handleTabChange = (event, newValue) => {
         formattedEndDate,
         locationId
       );
+      
+      console.log("Rezultat adăugare în coș:", success);
       
       if (success) {
         setSnackbar({
@@ -314,10 +323,15 @@ const handleTabChange = (event, newValue) => {
         throw new Error('Adăugarea în coș a eșuat');
       }
     } catch (err) {
-      console.error('Eroare la adăugarea în coș:', err);
+      console.error('Eroare completă la adăugarea în coș:', err);
+      console.error('Detalii eroare:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status
+      });
       setSnackbar({
         open: true,
-        message: `Eroare la adăugarea în coș: ${err.response?.data?.message || err.message || 'Verificați datele introduse'}`,
+        message: `Eroare la adăugarea în coș: ${err.response?.data?.msg || err.message || 'Verificați datele introduse'}`,
         severity: 'error'
       });
       return false;

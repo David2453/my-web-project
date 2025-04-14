@@ -1,5 +1,5 @@
 // frontend/src/components/profile/OrdersTab.js
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { OrdersContext } from '../context/OrdersContext';
 import {
@@ -34,14 +34,20 @@ import {
   KeyboardArrowUp as ExpandLessIcon,
   LocalShipping as ShippingIcon,
   Paid as PaidIcon,
-  SentimentDissatisfied as SadIcon
+  SentimentDissatisfied as SadIcon,
+  Refresh as RefreshIcon
 } from '@mui/icons-material';
 
 function OrdersTab() {
   const theme = useTheme();
-  const { orders, loading, error } = useContext(OrdersContext);
+  const { orders, loading, error, fetchOrders } = useContext(OrdersContext);
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [orderDetailsDialog, setOrderDetailsDialog] = useState({ open: false, order: null });
+
+  // Reîncarcă comenzile când se montează componenta
+  useEffect(() => {
+    fetchOrders();
+  }, []);
 
   // Format date
   const formatDate = (dateString) => {
@@ -84,6 +90,11 @@ function OrdersTab() {
     setOrderDetailsDialog({ open: false, order: null });
   };
 
+  // Handle refresh
+  const handleRefresh = () => {
+    fetchOrders();
+  };
+
   // Loading state
   if (loading) {
     return (
@@ -93,28 +104,42 @@ function OrdersTab() {
     );
   }
 
-  // Error state
-  if (error) {
-    return (
-      <Alert severity="error" sx={{ mb: 3 }}>
-        {error}
-      </Alert>
-    );
-  }
-
   return (
     <Box>
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h5" component="h2" fontWeight="bold">
           <OrderIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-          Order History
+          Istoric comenzi
         </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {orders.length} {orders.length === 1 ? 'order' : 'orders'}
-        </Typography>
+        <Box>
+          <Button
+            startIcon={<RefreshIcon />}
+            onClick={handleRefresh}
+            sx={{ mr: 1 }}
+          >
+            Reîmprospătează
+          </Button>
+          <Typography variant="body2" color="text.secondary" component="span">
+            {orders.length} {orders.length === 1 ? 'comandă' : 'comenzi'}
+          </Typography>
+        </Box>
       </Box>
 
-      {orders.length === 0 ? (
+      {error && (
+        <Alert 
+          severity="error" 
+          sx={{ mb: 3 }}
+          action={
+            <Button color="inherit" size="small" onClick={handleRefresh}>
+              REÎNCEARCĂ
+            </Button>
+          }
+        >
+          {error}
+        </Alert>
+      )}
+
+      {!error && orders.length === 0 ? (
         <Paper 
           elevation={1} 
           sx={{ 
@@ -126,10 +151,10 @@ function OrdersTab() {
         >
           <SadIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
           <Typography variant="h6" gutterBottom>
-            No orders yet
+            Nu există comenzi
           </Typography>
           <Typography variant="body2" color="text.secondary" paragraph>
-            Your order history will appear here after you make a purchase or book a rental.
+            Istoricul comenzilor va apărea aici după ce faceți o achiziție sau o închiriere.
           </Typography>
           <Button 
             variant="contained" 
@@ -137,7 +162,7 @@ function OrdersTab() {
             to="/bikes"
             startIcon={<OrderIcon />}
           >
-            Start Shopping
+            Începeți cumpărăturile
           </Button>
         </Paper>
       ) : (
@@ -146,12 +171,12 @@ function OrdersTab() {
             <TableHead>
               <TableRow>
                 <TableCell width="10%"></TableCell>
-                <TableCell>Order ID</TableCell>
-                <TableCell>Date</TableCell>
-                <TableCell>Items</TableCell>
+                <TableCell>ID Comandă</TableCell>
+                <TableCell>Dată</TableCell>
+                <TableCell>Produse</TableCell>
                 <TableCell align="right">Total</TableCell>
                 <TableCell>Status</TableCell>
-                <TableCell align="right">Actions</TableCell>
+                <TableCell align="right">Acțiuni</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -170,7 +195,7 @@ function OrdersTab() {
                       #{order.id.substring(order.id.length - 8).toUpperCase()}
                     </TableCell>
                     <TableCell>{formatDate(order.createdAt)}</TableCell>
-                    <TableCell>{order.items.length} {order.items.length === 1 ? 'item' : 'items'}</TableCell>
+                    <TableCell>{order.items.length} {order.items.length === 1 ? 'produs' : 'produse'}</TableCell>
                     <TableCell align="right">${order.total.toFixed(2)}</TableCell>
                     <TableCell>
                       <Chip 
@@ -185,7 +210,7 @@ function OrdersTab() {
                         variant="outlined"
                         onClick={() => openOrderDetails(order)}
                       >
-                        Details
+                        Detalii
                       </Button>
                     </TableCell>
                   </TableRow>

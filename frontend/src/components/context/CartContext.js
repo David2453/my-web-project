@@ -11,8 +11,16 @@ export const CartProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Configurare axios pentru a include token-ul în toate cererile
   useEffect(() => {
-    // Only fetch cart if user is authenticated
+    if (authState.token) {
+      axios.defaults.headers.common['x-auth-token'] = authState.token;
+    } else {
+      delete axios.defaults.headers.common['x-auth-token'];
+    }
+  }, [authState.token]);
+
+  useEffect(() => {
     if (authState.isAuthenticated) {
       fetchCart();
     } else {
@@ -24,9 +32,12 @@ export const CartProvider = ({ children }) => {
   const fetchCart = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/cart');
+      console.log('Încercare de preluare a coșului...');
+      console.log('Token prezent:', !!axios.defaults.headers.common['x-auth-token']);
       
-      // Transform the data to match our frontend structure
+      const res = await axios.get('/api/cart');
+      console.log('Răspuns preluare coș:', res.data);
+      
       const formattedCartItems = res.data.map(item => ({
         id: item._id,
         bikeId: item.bike._id,
@@ -36,7 +47,7 @@ export const CartProvider = ({ children }) => {
         rentalPrice: item.bike.rentalPrice,
         image: item.bike.image,
         quantity: item.quantity,
-        itemType: item.type, // 'purchase' or 'rental'
+        itemType: item.type,
         startDate: item.startDate,
         endDate: item.endDate,
         location: item.location ? {
@@ -49,72 +60,115 @@ export const CartProvider = ({ children }) => {
       setCartItems(formattedCartItems);
       setError(null);
     } catch (err) {
-      console.error('Error fetching cart:', err);
-      setError('Failed to load cart');
+      console.error('Eroare la preluarea coșului:', err);
+      setError('Nu s-a putut încărca coșul');
     } finally {
       setLoading(false);
     }
   };
 
   const addToCart = async (bikeId, itemType, quantity = 1, startDate = null, endDate = null, locationId = null) => {
+    console.log('Încercare de adăugare în coș cu datele:', {
+      bikeId,
+      itemType,
+      quantity,
+      startDate,
+      endDate,
+      locationId
+    });
+
     if (!authState.isAuthenticated) {
-      setError('You must be logged in to add items to cart');
+      console.error('Utilizatorul nu este autentificat');
+      setError('Trebuie să fiți autentificat pentru a adăuga în coș');
       return false;
     }
-    
+
     try {
+      // Verifică și setează token-ul pentru toate cererile
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Token-ul de autentificare lipsește');
+      }
+      axios.defaults.headers.common['x-auth-token'] = token;
+
+      // Verifică stocul disponibil
+      console.log('Verificare stoc disponibil...');
+      const stockCheck = await axios.get(`/api/bikes/${bikeId}/stock`, {
+        params: {
+          type: itemType,
+          locationId: locationId
+        }
+      });
+      
+      console.log('Răspuns verificare stoc:', stockCheck.data);
+      const { purchaseStock, rentalStock } = stockCheck.data;
+
+      if (itemType === 'purchase' && purchaseStock < quantity) {
+        const error = `Nu există suficient stoc disponibil pentru cumpărare (Disponibil: ${purchaseStock})`;
+        setError(error);
+        return false;
+      }
+
+      if (itemType === 'rental' && rentalStock < quantity) {
+        const error = `Nu există suficiente biciclete disponibile pentru închiriere la această locație (Disponibil: ${rentalStock})`;
+        setError(error);
+        return false;
+      }
+
+      console.log('Trimitere cerere POST către /api/cart...');
       const data = {
         bikeId,
         type: itemType,
-        quantity
+        quantity,
+        ...(itemType === 'rental' && {
+          startDate,
+          endDate,
+          locationId
+        })
       };
-      
-      if (itemType === 'rental') {
-        data.startDate = startDate;
-        data.endDate = endDate;
-        data.locationId = locationId;
-      }
       
       const res = await axios.post('/api/cart', data);
+      console.log('Răspuns adăugare în coș:', res.data);
       
-      const newItem = {
-        id: res.data._id,
-        bikeId: res.data.bike._id,
-        name: res.data.bike.name,
-        type: res.data.bike.type,
-        price: res.data.bike.price,
-        rentalPrice: res.data.bike.rentalPrice,
-        image: res.data.bike.image,
-        quantity: res.data.quantity,
-        itemType: res.data.type,
-        startDate: res.data.startDate,
-        endDate: res.data.endDate,
-        location: res.data.location ? {
-          id: res.data.location._id,
-          name: res.data.location.name,
-          city: res.data.location.city
-        } : null
-      };
-      
-      // If the item was added or quantity updated, refresh the cart
-      fetchCart();
+      await fetchCart(); // Reîncarcă coșul după adăugare
       return true;
     } catch (err) {
-      console.error('Error adding to cart:', err);
-      setError(err.response?.data?.msg || 'Failed to add to cart');
+      console.error('Eroare detaliată la adăugarea în coș:', err);
+      const errorMessage = err.response?.data?.msg || err.message || 'Nu s-a putut adăuga în coș';
+      console.error('Mesaj de eroare:', errorMessage);
+      setError(errorMessage);
       return false;
     }
   };
 
   const updateCartItem = async (cartItemId, quantity) => {
     try {
+      // Verifică stocul disponibil înainte de a actualiza cantitatea
+      const cartItem = cartItems.find(item => item.id === cartItemId);
+      if (!cartItem) {
+        setError('Cart item not found');
+        return false;
+      }
+
+      const stockCheck = await axios.get(`/api/bikes/${cartItem.bikeId}/stock`, {
+        params: {
+          type: cartItem.itemType,
+          locationId: cartItem.location?.id
+        }
+      });
+
+      if (cartItem.itemType === 'purchase' && stockCheck.data.purchaseStock < quantity) {
+        setError('Not enough stock available for purchase');
+        return false;
+      }
+
+      if (cartItem.itemType === 'rental' && stockCheck.data.rentalStock < quantity) {
+        setError('Not enough bikes available for rental at this location');
+        return false;
+      }
+
       await axios.put(`/api/cart/${cartItemId}`, { quantity });
-      
-      // Update the cart in state
-      setCartItems(cartItems.map(item => 
-        item.id === cartItemId ? { ...item, quantity } : item
-      ));
-      
+      fetchCart();
       return true;
     } catch (err) {
       console.error('Error updating cart item:', err);

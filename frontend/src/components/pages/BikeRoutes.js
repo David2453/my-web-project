@@ -54,12 +54,16 @@ function BikeRoutes() {
     };
 
     fetchLocations();
-  }, [locationParam, selectedLocation]);
+  }, [locationParam]);
 
   // Fetch routes based on selected location
   useEffect(() => {
     const fetchRoutes = async () => {
-      if (!selectedLocation) return;
+      if (!selectedLocation) {
+        setLoading(false);
+        setRoutes([]);
+        return;
+      }
       
       setLoading(true);
       try {
@@ -69,6 +73,7 @@ function BikeRoutes() {
       } catch (err) {
         console.error('Error fetching routes:', err);
         setError('Failed to load bike routes');
+        setRoutes([]);
       } finally {
         setLoading(false);
       }
