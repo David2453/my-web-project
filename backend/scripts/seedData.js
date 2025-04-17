@@ -77,7 +77,7 @@ const seedData = async () => {
         description: 'O bicicletă de munte de înaltă performanță perfectă pentru trasee dificile și aventuri în aer liber.',
         price: 899.99,
         rentalPrice: 35.99,
-        image: 'https://www.paulscycles.co.uk/images/altitude-c70-red-carbon.jpg?width=1998&height=1998&quality=85&mode=pad&format=webp&bgcolor=ffffff',
+        image: "/uploads/bikes/bike-1744903895282-433708060.jpg",
         features: ['Viteză Shimano cu 27 de trepte', 'Frâne pe disc hidraulice', 'Cadru din aluminiu ușor'],
         purchaseStock: 15,
         rentalInventory: [
@@ -98,7 +98,7 @@ const seedData = async () => {
         description: 'Bicicletă urbană confortabilă și elegantă perfectă pentru naveta și plimbări ocazionale.',
         price: 699.99,
         rentalPrice: 25.99,
-        image: 'https://images.ctfassets.net/ogr4ifihl2yh/3gvlDBzj1UgLVNH2vAhFEF/5a1585c9a1463d431d7cce957ba7c984/Profile_-_Around_the_Block_Women-s_26__Single_Speed_-_Mint_Green_-_630042_NEW.png?w=1000&q=85',
+        image: "/uploads/bikes/bike-1744903895282-433708060.jpg",
         features: ['Viteză Shimano cu 7 trepte', 'Poziție confortabilă verticală', 'Aripioare și protecție pentru lanț'],
         purchaseStock: 20,
         rentalInventory: [
@@ -119,7 +119,7 @@ const seedData = async () => {
         description: 'Bicicletă de șosea de înaltă performanță proiectată pentru viteză și curse pe distanțe lungi.',
         price: 1199.99,
         rentalPrice: 45.99,
-        image: 'https://www.certini.co.uk/images/products/s/sp/specialized-allez-e5-disc-road-b-2.jpg?width=1998&height=1998&quality=85&mode=pad&format=webp&bgcolor=ffffff',
+        image: "/uploads/bikes/bike-1744903895282-433708060.jpg",
         features: ['Transmisie Shimano 105 cu 22 de viteze', 'Furcă din carbon pentru greutate redusă', 'Cadru din aluminiu ușor'],
         purchaseStock: 10,
         rentalInventory: [
@@ -140,7 +140,7 @@ const seedData = async () => {
         description: 'Bicicletă hibridă versatilă care combină caracteristici ale bicicletelor de șosea și de munte.',
         price: 749.99,
         rentalPrice: 30.99,
-        image: 'https://mediacdn.libertatea.ro/unsafe/800x600/smart/filters:format(webp):contrast(8):quality(75)/https://static4.libertatea.ro/wp-content/uploads/2020/09/rasa-de-caine-pug.jpg',
+        image: "/uploads/bikes/bike-1744903895282-433708060.jpg",
         features: ['Viteză Shimano cu 21 de trepte', 'Furcă cu suspensie frontală', 'Gripuri ergonomice confortabile'],
         purchaseStock: 12,
         rentalInventory: [
