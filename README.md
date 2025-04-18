@@ -166,11 +166,7 @@ Aplicația frontend va rula pe `http://localhost:3000`.
 - Leaflet 1.9.4
 - React-Leaflet 5.0.0
 - Web Vitals 2.1.4
-- Biblioteci de testare:
-  - @testing-library/dom 10.4.0
-  - @testing-library/jest-dom 6.6.3
-  - @testing-library/react 16.2.0
-  - @testing-library/user-event 13.5.0
+
 
 ### Backend:
 - Node.js
