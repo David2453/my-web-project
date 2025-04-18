@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import './ResponsiveVideo.css'; // Vom crea acest fișier pentru a ne asigura că stilurile noastre sunt prioritare
-import '../../../../frontend/src/'
+
 const ResponsiveVideo = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const videoRef = useRef(null);
