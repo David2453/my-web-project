@@ -21,7 +21,7 @@ Proiectul este împărțit în două părți principale:
 ### 1. Clonează repository-ul
 
 ```bash
-git clone [URL-ul repository-ului tău]
+git clone https://github.com/David2453/my-web-project
 cd my-web-project
 ```
 
