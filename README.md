@@ -79,7 +79,7 @@ JWT_SECRET=your_jwt_secret_key
 mongodb://localhost:27017/
 ```
 
-### 6. Porneste service-ul MongoDB
+### 5.1. Porneste service-ul MongoDB
 ```
 deschideti cmd prompt cu drepturi de administrator si rulati comanda : 'net start MongoDB'
 ```
