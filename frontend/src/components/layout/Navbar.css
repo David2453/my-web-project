@@ -145,3 +145,71 @@
   color: #4CAF50 !important;
   transform: translateY(-3px) !important;
 }
+
+/* Mobile Drawer Styling */
+.MuiDrawer-paper {
+  background: linear-gradient(to bottom, #1e1e1e, #2d2d2d) !important;
+  color: white !important;
+  width: 280px !important;
+  transition: transform 0.3s ease-in-out !important;
+}
+
+/* Drawer header styling */
+.drawer-header {
+  padding: 20px !important;
+  background: linear-gradient(to right, #388E3C, #4CAF50) !important;
+  margin-bottom: 10px !important;
+}
+
+/* Drawer list items */
+.drawer-list-item {
+  border-left: 3px solid transparent !important;
+  margin: 5px 10px !important;
+  border-radius: 0 8px 8px 0 !important;
+  transition: all 0.2s ease !important;
+}
+
+.drawer-list-item:hover, 
+.drawer-list-item.active {
+  background-color: rgba(76, 175, 80, 0.1) !important;
+  border-left-color: #4CAF50 !important;
+}
+
+.drawer-list-item .MuiListItemIcon-root {
+  color: rgba(255, 255, 255, 0.7) !important;
+  min-width: 40px !important;
+  transition: all 0.2s ease !important;
+}
+
+.drawer-list-item:hover .MuiListItemIcon-root,
+.drawer-list-item.active .MuiListItemIcon-root {
+  color: #4CAF50 !important;
+}
+
+.drawer-list-item .MuiListItemText-primary {
+  font-weight: 500 !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* Drawer divider */
+.drawer-divider {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  margin: 10px 0 !important;
+}
+
+/* Drawer animations */
+@keyframes slideInRight {
+  from {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.drawer-item {
+  animation: slideInRight 0.3s forwards;
+  animation-delay: calc(0.05s * var(--index));
+}

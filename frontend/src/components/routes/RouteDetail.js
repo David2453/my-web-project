@@ -105,7 +105,7 @@ function RouteDetail() {
   const [openImageDialog, setOpenImageDialog] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [weather, setWeather] = useState(null);
-  const [showWeather, setShowWeather] = useState(false);
+  const [showWeather, setShowWeather] = useState(true);
   const [userRating, setUserRating] = useState(0);
   const [activeImage, setActiveImage] = useState(0);
   const [showWeatherDetails, setShowWeatherDetails] = useState(false);
@@ -302,7 +302,7 @@ function RouteDetail() {
                 }}
                 icon={<StarIcon fontSize="inherit" />}
               />
-              <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+              <Typography variant="body2" color="#ffffff" sx={{ ml: 1,fontSize:17 }}>
                 Based on 28 riders
               </Typography>
             </Box>
@@ -312,17 +312,16 @@ function RouteDetail() {
                 icon={<PlaceIcon />} 
                 label={route.location.name} 
                 color="primary" 
-                sx={{ fontWeight: 'medium' }}
               />
               <Chip 
-                icon={<BikeIcon />} 
+                icon={<BikeIcon />} s
                 label={`${route.distance} km`} 
-                variant="outlined"
+                color="primary" 
               />
               <Chip 
                 icon={<TimerIcon />} 
                 label={formatTime(route.estimatedTime)} 
-                variant="outlined"
+                color="primary" 
               />
               <Chip 
                 icon={<TerrainIcon />} 
@@ -332,80 +331,111 @@ function RouteDetail() {
               <Chip 
                 icon={<RepeatIcon />} 
                 label={route.routeType.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} 
-                variant="outlined"
+                color="primary" 
               />
               <Tooltip title="View Weather Forecast">
                 <Chip 
                   icon={<SunnyIcon />} 
                   label={`${weather?.temp}°C`}
-                  variant="outlined"
                   color="info"
-                  onClick={() => setShowWeather(!showWeather)}
-                  clickable
                 />
               </Tooltip>
             </Box>
 
-            {/* Weather info - collapsed by default */}
-            <Slide direction="down" in={showWeather} mountOnEnter unmountOnExit>
-              <Paper 
-                elevation={2} 
-                sx={{ 
-                  p: 2, 
-                  mb: 3, 
-                  borderRadius: 2,
-                  background: 'linear-gradient(135deg, #e0f7fa 0%, #bbdefb 100%)',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease-in-out',
-                  '&:hover': {
-                    transform: 'translateY(-2px)',
-                    boxShadow: 3
-                  }
-                }}
-                onClick={() => setShowWeatherDetails(!showWeatherDetails)}
-              >
-                <Box display="flex" alignItems="center" justifyContent="space-between">
-                  <Typography variant="subtitle1" fontWeight="medium">
-                    Vremea în {route.location.name}
-                  </Typography>
-                  <IconButton size="small">
-                    <ExpandMoreIcon 
-                      sx={{ 
-                        transform: showWeatherDetails ? 'rotate(180deg)' : 'none',
-                        transition: 'transform 0.3s ease-in-out'
-                      }} 
-                    />
-                  </IconButton>
-                </Box>
-                
-                <Collapse in={showWeatherDetails}>
-                  <Grid container spacing={2} sx={{ mt: 1 }}>
-                    <Grid item xs={4} textAlign="center">
-                      <SunnyIcon sx={{ fontSize: 40, color: '#f57c00' }} />
-                      <Typography variant="body2" fontWeight="medium">
-                        {weather?.condition}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={4} textAlign="center">
-                      <Typography variant="h5" fontWeight="bold">
-                        {weather?.temp}°C
-                      </Typography>
-                      <Typography variant="body2">Temperatură</Typography>
-                    </Grid>
-                    <Grid item xs={4} textAlign="center">
-                      <Typography variant="body1" fontWeight="medium">
-                        {weather?.windSpeed} km/h
-                      </Typography>
-                      <Typography variant="body2">Vânt</Typography>
-                    </Grid>
+            {/* Weather info */}
+            <Paper 
+              elevation={2} 
+              sx={{ 
+                p: 2, 
+                mb: 3, 
+                borderRadius: 2,
+                background: 'linear-gradient(135deg, #e0f7fa 0%, #bbdefb 100%)',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: 3
+                }
+              }}
+              onClick={() => setShowWeatherDetails(!showWeatherDetails)}
+            >
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Typography variant="subtitle1" fontWeight="medium">
+                  Wheather in {route.location.name}
+                </Typography>
+                <IconButton size="small">
+                  <ExpandMoreIcon 
+                    sx={{ 
+                      transform: showWeatherDetails ? 'rotate(180deg)' : 'none',
+                      transition: 'transform 0.3s ease-in-out'
+                    }} 
+                  />
+                </IconButton>
+              </Box>
+              
+              <Collapse in={showWeatherDetails}>
+                <Grid container spacing={2} sx={{ mt: 1 }}>
+                  <Grid item xs={4} textAlign="center">
+                    <SunnyIcon sx={{ fontSize: 40, color: '#f57c00' }} />
+                    <Typography variant="body2" fontWeight="medium">
+                      {weather?.condition}
+                    </Typography>
                   </Grid>
-                </Collapse>
-              </Paper>
-            </Slide>
+                  <Grid item xs={4} textAlign="center">
+                    <Typography variant="h5" fontWeight="bold">
+                      {weather?.temp}°C
+                    </Typography>
+                    <Typography variant="body2">Temperature</Typography>
+                  </Grid>
+                  <Grid item xs={4} textAlign="center">
+                    <Typography variant="body1" fontWeight="medium">
+                      {weather?.windSpeed} km/h
+                    </Typography>
+                    <Typography variant="body2">Wind</Typography>
+                  </Grid>
+                </Grid>
+              </Collapse>
+            </Paper>
 
-            <Typography variant="body1" paragraph sx={{ lineHeight: 1.7 }}>
-              {route.description}
-            </Typography>
+            <Box 
+              sx={{ 
+                mb: 4,
+                p: 3,
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                borderRadius: 2,
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                border: '1px solid rgba(76, 175, 80, 0.2)'
+              }}
+            >
+              <Typography 
+                variant="h6" 
+                sx={{ 
+                  mb: 2,
+                  color: 'primary.main',
+                  fontWeight: 600,
+                  borderBottom: '2px solid',
+                  borderColor: 'primary.light',
+                  pb: 1
+                }}
+              >
+                Route Description
+              </Typography>
+              <Typography 
+                variant="body1" 
+                paragraph 
+                sx={{ 
+                  lineHeight: 1.8,
+                  color: '#2e2e2e',
+                  fontSize: '1.05rem',
+                  letterSpacing: 0.3,
+                  textAlign: 'justify',
+                  '& strong': { color: 'primary.dark', fontWeight: 600 },
+                  '& em': { fontStyle: 'italic', color: 'text.secondary' }
+                }}
+              >
+                {route.description}
+              </Typography>
+            </Box>
 
             {/* Route Map */}
             <Paper 
@@ -511,7 +541,6 @@ function RouteDetail() {
                       label={tag}
                       size="small"
                       color="primary"
-                      variant="outlined"
                       sx={{ 
                         borderRadius: 3,
                         transition: 'all 0.2s',
@@ -529,8 +558,8 @@ function RouteDetail() {
             {/* Image gallery */}
             {route.images && route.images.length > 0 && (
               <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle1" gutterBottom fontWeight="medium">
-                  Galerie foto
+                <Typography variant="subtitle1" gutterBottom fontWeight="medium" color="#ffffff">
+                  Photo Gallery
                 </Typography>
                 <Card 
                   elevation={4} 
@@ -695,7 +724,7 @@ function RouteDetail() {
                           mb: 0.5
                         }}
                       >
-                        Distanță
+                        Distance
                       </Typography>
                     } 
                     secondary={
@@ -732,7 +761,7 @@ function RouteDetail() {
                           mb: 0.5
                         }}
                       >
-                        Timp Estimat
+                        Estimated Time
                       </Typography>
                     } 
                     secondary={
@@ -769,7 +798,7 @@ function RouteDetail() {
                           mb: 0.5
                         }}
                       >
-                        Diferență de Nivel
+                        Elevation Difference
                       </Typography>
                     } 
                     secondary={
@@ -806,7 +835,7 @@ function RouteDetail() {
                           mb: 0.5
                         }}
                       >
-                        Dificultate
+                        Difficulty
                       </Typography>
                     } 
                     secondary={
@@ -845,7 +874,7 @@ function RouteDetail() {
                           mb: 0.5
                         }}
                       >
-                        Tip Traseu
+                        Route Type
                       </Typography>
                     } 
                     secondary={

@@ -126,7 +126,7 @@ function Home() {
       {/* Featured Bikes Section */}
       <div className="featured-section">
         <div className="container">
-          <h2 className="section-title" style={{color:'#2cd144'}} >Cele mai apreciate biciclete</h2>
+          <h2 className="section-title" style={{color:'#2cd144'}} >Most Popular Bikes</h2>
           
           {loading ? (
             <div className="text-center my-5">
@@ -153,17 +153,17 @@ function Home() {
                       <h3 style={{fontSize:20,color:'white' }}>{bike.name}</h3>
                       <div className="d-flex justify-content-between align-items-center mb-3">
                         <div>
-                          <p className="mb-0 bike-price"><strong>Cumpără:</strong> ${bike.price}</p>
-                          <p className="mb-0 bike-price"><strong>Închiriază:</strong> ${bike.rentalPrice}/zi</p>
+                          <p className="mb-0 bike-price"><strong>Buy:</strong> ${bike.price}</p>
+                          <p className="mb-0 bike-price"><strong>Rent:</strong> ${bike.rentalPrice}/zi</p>
                         </div>
-                        <Link to={`/bikes/${bike._id || bike.id}`} className="btn btn-sm btn-primary">Detalii</Link>
+                        <Link to={`/bikes/${bike._id || bike.id}`} className="btn btn-sm btn-primary">Details</Link>
                       </div>
                       <div className="d-flex justify-content-between mt-2">
                         <Link to={`/shop?type=${encodeURIComponent(bike.type)}`} className="btn btn-success" style={{width: '48%'}}>
-                          Cumpără
+                        Buy
                         </Link>
                         <Link to={`/rentals?type=${encodeURIComponent(bike.type)}`} className="btn btn-info" style={{width: '48%', color: 'white'}}>
-                          Închiriază
+                        Rent
                         </Link>
                       </div>
                     </div>
@@ -174,7 +174,7 @@ function Home() {
           )}
           
           <div className="text-center mt-3">
-            <Link to="/bikes" className="btn btn-outline-primary view-all-btn">Vezi toate bicicletele</Link>
+            <Link to="/bikes" className="btn btn-outline-primary view-all-btn">See all bikes</Link>
           </div>
         </div>
       </div>
@@ -182,7 +182,7 @@ function Home() {
       {/* Services Section */}
       <div className="services-section">
         <div className="container">
-          <h2 className="section-title">Serviciile noastre</h2>
+          <h2 className="section-title">Our Services</h2>
           <div className="row">
             <div className="col-md-4 mb-4">
               <div className="card service-card h-100 border-0 bg-light">
@@ -190,8 +190,8 @@ function Home() {
                   <div className="mb-3">
                     <i className="bi bi-bicycle service-icon"></i>
                   </div>
-                  <h5 className="card-title service-title">Închirieri biciclete</h5>
-                  <p className="card-text">Închiriază o bicicletă pentru ore, zile sau săptămâni. Perfect pentru turiști și bicicliști ocazionali.</p>
+                  <h5 className="card-title service-title">Bike Rentals</h5>
+                  <p className="card-text">Rent a bike for hours, days or weeks. Perfect for tourists and occasional cyclists.</p>
                 </div>
               </div>
             </div>
@@ -201,8 +201,8 @@ function Home() {
                   <div className="mb-3">
                     <i className="bi bi-shop service-icon"></i>
                   </div>
-                  <h5 className="card-title service-title">Vânzări biciclete</h5>
-                  <p className="card-text">Explorează colecția noastră de biciclete de înaltă calitate la prețuri competitive.</p>
+                  <h5 className="card-title service-title">Bike Sales</h5>
+                  <p className="card-text">Explore our collection of high-quality bikes at competitive prices.</p>
                 </div>
               </div>
             </div>
@@ -212,8 +212,8 @@ function Home() {
                   <div className="mb-3">
                     <i className="bi bi-tools service-icon"></i>
                   </div>
-                  <h5 className="card-title service-title">Întreținere</h5>
-                  <p className="card-text">Servicii profesionale de întreținere și reparație pentru biciclete, pentru a asigura plimbări fără probleme.</p>
+                  <h5 className="card-title service-title">Maintenance</h5>
+                  <p className="card-text">Professional maintenance and repair services for bikes, ensuring trouble-free rides.</p>
                 </div>
               </div>
             </div>
@@ -228,11 +228,11 @@ function Home() {
             <div className="col-12">
               <div className="card cta-card">
                 <div className="card-body p-5 text-center">
-                  <h3 className="cta-title">Ești gata să începi aventura?</h3>
-                  <p className="lead">Creează un cont pentru a închiria sau cumpăra bicicleta perfectă astăzi.</p>
+                  <h3 className="cta-title">Are you ready to start the adventure?</h3>
+                  <p className="lead">Create an account to rent or buy the perfect bike today.</p>
                   <div className="d-flex justify-content-center gap-3">
-                    <Link to="/register" className="btn btn-light cta-btn mt-3">Înregistrează-te</Link>
-                    <Link to="/login" className="btn btn-light cta-btn mt-3">Autentifică-te</Link>
+                    <Link to="/register" className="btn btn-light cta-btn mt-3">Register</Link>
+                    <Link to="/login" className="btn btn-light cta-btn mt-3">Login</Link>
                   </div>
                 </div>
               </div>

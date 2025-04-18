@@ -30,7 +30,8 @@ import {
   DialogContentText,
   DialogTitle,
   Snackbar,
-  Alert
+  Alert,
+  ListItemIcon
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
@@ -39,6 +40,12 @@ import PersonIcon from '@mui/icons-material/Person';
 import DirectionsBikeIcon from '@mui/icons-material/DirectionsBike';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import DashboardIcon from '@mui/icons-material/Dashboard';
+import HomeIcon from '@mui/icons-material/Home';
+import StoreIcon from '@mui/icons-material/Store';
+import TimeToLeaveIcon from '@mui/icons-material/TimeToLeave';
+import MapIcon from '@mui/icons-material/Map';
+import LoginIcon from '@mui/icons-material/Login';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 
 function Navbar() {
   const { authState, logout } = useContext(AuthContext);
@@ -94,44 +101,59 @@ function Navbar() {
   };
 
   const navLinks = [
-    { title: 'Home', path: '/' },
-    { title: 'Bikes', path: '/bikes' },
-    { title: 'Shop', path: '/shop' },
-    { title: 'Rentals', path: '/rentals' },
-    { title: 'Bike Routes', path: '/routes' }
-
+    { title: 'Home', path: '/', icon: <HomeIcon /> },
+    { title: 'Bikes', path: '/bikes', icon: <DirectionsBikeIcon /> },
+    { title: 'Shop', path: '/shop', icon: <StoreIcon /> },
+    { title: 'Rentals', path: '/rentals', icon: <DirectionsBikeIcon /> },
+    { title: 'Bike Routes', path: '/routes', icon: <MapIcon /> }
   ];
 
   // Drawer content for mobile view
   const drawerContent = (
-    <Box sx={{ width: 250 }} role="presentation">
-      <Box sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
-        <DirectionsBikeIcon sx={{ mr: 1 }} />
-        <Typography variant="h6" component="div">
+    <Box sx={{ width: '100%' }} role="presentation">
+      <Box className="drawer-header" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <DirectionsBikeIcon sx={{ mr: 1, fontSize: 28 }} />
+        <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
           Bike Rent & Shop
         </Typography>
       </Box>
-      <Divider />
+      <Divider className="drawer-divider" />
       <List>
-        {navLinks.map((link) => (
-          <ListItem key={link.path} disablePadding>
+        {navLinks.map((link, index) => (
+          <ListItem 
+            key={link.path} 
+            disablePadding 
+            className="drawer-list-item drawer-item"
+            sx={{ '--index': index }}
+          >
             <ListItemButton onClick={() => handleNavigation(link.path)}>
+              <ListItemIcon>{link.icon}</ListItemIcon>
               <ListItemText primary={link.title} />
             </ListItemButton>
           </ListItem>
         ))}
       </List>
-      <Divider />
+      <Divider className="drawer-divider" />
       <List>
         {!isAuthenticated ? (
           <>
-            <ListItem disablePadding>
+            <ListItem 
+              disablePadding 
+              className="drawer-list-item drawer-item"
+              sx={{ '--index': navLinks.length }}
+            >
               <ListItemButton onClick={() => handleNavigation('/login')}>
+                <ListItemIcon><LoginIcon /></ListItemIcon>
                 <ListItemText primary="Login" />
               </ListItemButton>
             </ListItem>
-            <ListItem disablePadding>
+            <ListItem 
+              disablePadding 
+              className="drawer-list-item drawer-item"
+              sx={{ '--index': navLinks.length + 1 }}
+            >
               <ListItemButton onClick={() => handleNavigation('/register')}>
+                <ListItemIcon><PersonAddIcon /></ListItemIcon>
                 <ListItemText primary="Register" />
               </ListItemButton>
             </ListItem>
@@ -139,34 +161,54 @@ function Navbar() {
         ) : (
           <>
             {user && user.role === 'admin' && (
-              <ListItem disablePadding>
+              <ListItem 
+                disablePadding 
+                className="drawer-list-item drawer-item"
+                sx={{ '--index': navLinks.length }}
+              >
                 <ListItemButton onClick={() => handleNavigation('/admin')}>
-                  <AdminPanelSettingsIcon sx={{ mr: 1 }} />
+                  <ListItemIcon><AdminPanelSettingsIcon /></ListItemIcon>
                   <ListItemText primary="Admin Panel" />
                 </ListItemButton>
               </ListItem>
             )}
-            <ListItem disablePadding>
+            <ListItem 
+              disablePadding 
+              className="drawer-list-item drawer-item"
+              sx={{ '--index': navLinks.length + (user && user.role === 'admin' ? 1 : 0) }}
+            >
               <ListItemButton onClick={() => handleNavigation('/dashboard')}>
-                <DashboardIcon sx={{ mr: 1 }} />
+                <ListItemIcon><DashboardIcon /></ListItemIcon>
                 <ListItemText primary="Dashboard" />
               </ListItemButton>
             </ListItem>
-            <ListItem disablePadding>
+            <ListItem 
+              disablePadding 
+              className="drawer-list-item drawer-item"
+              sx={{ '--index': navLinks.length + (user && user.role === 'admin' ? 2 : 1) }}
+            >
               <ListItemButton onClick={() => handleNavigation('/profile')}>
-                <PersonIcon sx={{ mr: 1 }} />
+                <ListItemIcon><PersonIcon /></ListItemIcon>
                 <ListItemText primary="Profile" />
               </ListItemButton>
             </ListItem>
-            <ListItem disablePadding>
+            <ListItem 
+              disablePadding 
+              className="drawer-list-item drawer-item"
+              sx={{ '--index': navLinks.length + (user && user.role === 'admin' ? 3 : 2) }}
+            >
               <ListItemButton onClick={() => handleNavigation('/cart')}>
-                <ShoppingCartIcon sx={{ mr: 1 }} />
+                <ListItemIcon><ShoppingCartIcon /></ListItemIcon>
                 <ListItemText primary="Cart" />
               </ListItemButton>
             </ListItem>
-            <ListItem disablePadding>
+            <ListItem 
+              disablePadding 
+              className="drawer-list-item drawer-item"
+              sx={{ '--index': navLinks.length + (user && user.role === 'admin' ? 4 : 3), color: 'error.main' }}
+            >
               <ListItemButton onClick={handleLogoutClick}>
-                <LogoutIcon sx={{ mr: 1 }} color="error" />
+                <ListItemIcon><LogoutIcon color="error" /></ListItemIcon>
                 <ListItemText primary="Logout" sx={{ color: 'error.main' }} />
               </ListItemButton>
             </ListItem>
@@ -361,6 +403,11 @@ function Navbar() {
         anchor="left"
         open={mobileDrawerOpen}
         onClose={() => setMobileDrawerOpen(false)}
+        PaperProps={{
+          sx: {
+            borderRadius: '0 10px 10px 0',
+          }
+        }}
       >
         {drawerContent}
       </Drawer>
