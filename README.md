@@ -4,7 +4,7 @@ Acest proiect reprezintă o platformă web pentru vânzarea și închirierea de 
 
 ## Cerințe preliminare
 
-Pentru a rula acest proiect, trebuie să ai instalate următoarele:
+Instalari necesare:
 
 - [Node.js](https://nodejs.org/) (versiunea 16.x sau mai recentă)
 - [npm](https://www.npmjs.com/) (vine împreună cu Node.js)
@@ -79,7 +79,11 @@ JWT_SECRET=your_jwt_secret_key
 mongodb://localhost:27017/
 ```
 
-Poți modifica `JWT_SECRET` cu o valoare aleatoare pentru securitate sporită.
+### 6. Porneste service-ul MongoDB
+```
+deschideti cmd prompt cu drepturi de administrator si rulati comanda : 'net start MongoDB'
+```
+
 
 ### 6. Populează baza de date
 
@@ -127,6 +131,8 @@ npm start
 ```
 
 Aplicația frontend va rula pe `http://localhost:3000`.
+
+## In continuare va rog sa va creati un cont si sa explorati site-ul. Pentru a avea drepturi de acces la pagina de admin va trebui sa configurati rolul de 'admin' pentru utilizatorul dorit din MongoDBCompass din cadrul conexiunii cu baza de date a site-ului. 
 
 ## Funcționalități principale
 
