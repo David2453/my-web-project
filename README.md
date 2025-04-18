@@ -86,6 +86,7 @@ Poți modifica `JWT_SECRET` cu o valoare aleatoare pentru securitate sporită.
 ```bash
 # În directorul backend
 npm run seed
+node scripts/seedRoutes.js
 ```
 
 ### 7. Configurează frontend-ul
