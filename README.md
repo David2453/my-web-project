@@ -21,7 +21,7 @@ Proiectul este împărțit în două părți principale:
 ### 1. Clonează repository-ul
 
 ```bash
-git clone [URL-ul repository-ului tău]
+git clone https://github.com/David2453/my-web-project
 cd my-web-project
 ```
 
@@ -74,17 +74,22 @@ Fișierul `.env` trebuie să conțină:
 MONGO_URI=mongodb://localhost:27017/mywebproject
 JWT_SECRET=your_jwt_secret_key
 ```
+### 5. Sa creeaza o noua conexiune in MongoDBCompass cu connection string-ul:
+```
+mongodb://localhost:27017/
+```
 
 Poți modifica `JWT_SECRET` cu o valoare aleatoare pentru securitate sporită.
 
-### 5. Populează baza de date (opțional)
+### 6. Populează baza de date
 
 ```bash
 # În directorul backend
 npm run seed
+node scripts/seedRoutes.js
 ```
 
-### 6. Configurează frontend-ul
+### 7. Configurează frontend-ul
 
 ```bash
 # Navighează în directorul frontend
@@ -104,17 +109,12 @@ npm audit
 npm audit fix
 ```
 
-### 7. Rulează aplicația
+### 8. Rulează aplicația
 
 #### Pornește backend-ul:
 
 ```bash
-# În directorul backend
-node server.js
-
-# Sau dacă ai nodemon instalat (pentru dezvoltare cu auto-restart)
-# npm install -g nodemon
-nodemon server.js
+npm start
 ```
 
 Serverul backend va rula pe `http://localhost:5000`.
@@ -134,7 +134,6 @@ Aplicația frontend va rula pe `http://localhost:3000`.
 - Filtrare biciclete după tip (Mountain Bike, Urban Bike, Road Bike)
 - Sistem de rating pentru biciclete
 - Posibilitatea de a cumpăra sau închiria biciclete
-- Servicii de întreținere pentru biciclete
 - Autentificare și înregistrare utilizatori
 - Panou de administrare pentru gestionarea bicicletelor și comenzilor
 
