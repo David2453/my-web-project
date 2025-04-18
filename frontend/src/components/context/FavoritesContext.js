@@ -12,30 +12,32 @@ export const FavoritesProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Only fetch favorites if user is authenticated
     if (authState.isAuthenticated) {
+      axios.defaults.headers.common['x-auth-token'] = authState.token;
       fetchFavorites();
     } else {
+      delete axios.defaults.headers.common['x-auth-token'];
       setFavorites([]);
       setLoading(false);
     }
-  }, [authState.isAuthenticated]);
+  }, [authState.isAuthenticated, authState.token]);
 
   const fetchFavorites = async () => {
     setLoading(true);
     try {
       const res = await axios.get('/api/favorites');
-      // Transform the data to match our frontend structure
-      const formattedFavorites = res.data.map(fav => ({
-        id: fav._id,
-        bikeId: fav.bike._id,
-        name: fav.bike.name,
-        type: fav.bike.type,
-        price: fav.bike.price,
-        rentalPrice: fav.bike.rentalPrice,
-        image: fav.bike.image,
-        addedOn: fav.addedOn
-      }));
+      const formattedFavorites = res.data
+        .filter(fav => fav.bike)
+        .map(fav => ({
+          id: fav._id,
+          bikeId: fav.bike._id,
+          name: fav.bike.name,
+          type: fav.bike.type,
+          price: fav.bike.price,
+          rentalPrice: fav.bike.rentalPrice,
+          image: fav.bike.image,
+          addedOn: fav.addedOn
+        }));
       setFavorites(formattedFavorites);
       setError(null);
     } catch (err) {
@@ -47,11 +49,6 @@ export const FavoritesProvider = ({ children }) => {
   };
 
   const addFavorite = async (bikeId) => {
-    if (!authState.isAuthenticated) {
-      setError('You must be logged in to add favorites');
-      return false;
-    }
-    
     try {
       const res = await axios.post('/api/favorites', { bikeId });
       const newFavorite = {
