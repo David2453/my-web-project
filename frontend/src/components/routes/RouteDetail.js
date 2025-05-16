@@ -101,12 +101,10 @@ function RouteDetail() {
   const [route, setRoute] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [favorite, setFavorite] = useState(false);
   const [openImageDialog, setOpenImageDialog] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [weather, setWeather] = useState(null);
   const [showWeather, setShowWeather] = useState(true);
-  const [userRating, setUserRating] = useState(0);
   const [activeImage, setActiveImage] = useState(0);
   const [showWeatherDetails, setShowWeatherDetails] = useState(false);
   const [showMap, setShowMap] = useState(true);
@@ -128,9 +126,6 @@ function RouteDetail() {
       try {
         const res = await axios.get(`/api/routes/${id}`);
         setRoute(res.data);
-        
-        // Simulate a 3-star rating - in a real app, this would come from user data
-        setUserRating(3.5);
         
         // Simulate getting weather data
         const fakeWeather = {
@@ -166,12 +161,6 @@ function RouteDetail() {
   const handleImageClick = (img) => {
     setSelectedImage(img);
     setOpenImageDialog(true);
-  };
-
-  // Handle favorite toggle
-  const toggleFavorite = () => {
-    setFavorite(!favorite);
-    // In a real app, you would save this to the user's favorites
   };
 
   // Calculate estimated calories
@@ -262,48 +251,9 @@ function RouteDetail() {
         <Grid container spacing={4}>
           {/* Left side - Route info */}
           <Grid item xs={12} md={8}>
-            <Box sx={{ position: 'relative', mb: 3 }}>
+            <Box sx={{ mb: 3 }}>
               <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
                 {route.name}
-              </Typography>
-              
-              <Box position="absolute" top={0} right={0} display="flex" gap={1}>
-                <Tooltip title="Share Route">
-                  <IconButton 
-                    color="primary" 
-                    sx={{ bgcolor: 'rgba(76, 175, 80, 0.1)' }}
-                    onClick={() => {
-                      // In a real app, you would implement sharing functionality
-                      alert('Share functionality would be implemented here');
-                    }}
-                  >
-                    <ShareIcon />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title={favorite ? "Remove from Favorites" : "Add to Favorites"}>
-                  <IconButton 
-                    color={favorite ? "error" : "default"} 
-                    sx={{ bgcolor: 'rgba(76, 175, 80, 0.1)' }}
-                    onClick={toggleFavorite}
-                  >
-                    {favorite ? <FavoriteIcon /> : <FavoriteBorderIcon />}
-                  </IconButton>
-                </Tooltip>
-              </Box>
-            </Box>
-
-            {/* Rating */}
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-              <Rating 
-                value={userRating} 
-                precision={0.5} 
-                onChange={(event, newValue) => {
-                  setUserRating(newValue);
-                }}
-                icon={<StarIcon fontSize="inherit" />}
-              />
-              <Typography variant="body2" color="#ffffff" sx={{ ml: 1,fontSize:17 }}>
-                Based on 28 riders
               </Typography>
             </Box>
 
@@ -314,7 +264,7 @@ function RouteDetail() {
                 color="primary" 
               />
               <Chip 
-                icon={<BikeIcon />} s
+                icon={<BikeIcon />} 
                 label={`${route.distance} km`} 
                 color="primary" 
               />
@@ -447,40 +397,7 @@ function RouteDetail() {
                 position: 'relative'
               }}
             >
-              <Box 
-                sx={{ 
-                  position: 'absolute', 
-                  top: 10, 
-                  right: 10, 
-                  zIndex: 1000,
-                  display: 'flex',
-                  gap: 1,
-                  bgcolor: 'rgba(255, 255, 255, 0.9)',
-                  p: 1,
-                  borderRadius: 2,
-                  boxShadow: 1
-                }}
-              >
-                <Tooltip title="Descarcă GPX">
-                  <IconButton 
-                    size="small"
-                    onClick={() => {
-                      // Implementare descărcare GPX
-                      alert('Funcționalitatea de descărcare GPX va fi implementată aici');
-                    }}
-                  >
-                    <DownloadIcon />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title={showMap ? "Ascunde harta" : "Arată harta"}>
-                  <IconButton 
-                    size="small"
-                    onClick={() => setShowMap(!showMap)}
-                  >
-                    {showMap ? <VisibilityIcon /> : <VisibilityOffIcon />}
-                  </IconButton>
-                </Tooltip>
-              </Box>
+              
             
               {showMap && routeCoordinates.length > 0 ? (
                 <MapContainer 
@@ -913,7 +830,7 @@ function RouteDetail() {
                 </Typography>
               </Box>
               <Typography variant="body2" color="text.secondary" paragraph>
-                This route starts at our rental location. Perfect for a day trip!
+                Aceasta ruta porneste de la magazinul nostru! Perfecta pentru o aventura pe timp de zi!
               </Typography>
               <Button 
                 variant="contained" 
@@ -931,13 +848,13 @@ function RouteDetail() {
                   }
                 }}
               >
-                Rent Bikes at This Location
+                Inchiriaza din aceasta locatie
               </Button>
             </Paper>
 
             <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
               <Typography variant="h6" gutterBottom fontWeight="medium">
-                Need a Bike?
+                Ai nevoie de o bicicleta?
               </Typography>
               <Box sx={{ 
                 display: 'flex', 
@@ -953,7 +870,7 @@ function RouteDetail() {
                 </Typography>
               </Box>
               <Typography variant="body2" paragraph>
-                Don't have your own bike? No problem! Rent one from our location and enjoy this beautiful route.
+                Nu ai propria ta bicicleta? Nicio problema! Inchiriaza una de la locatia noastra si bucura-te de plimbare.
               </Typography>
               <Grid container spacing={1}>
                 <Grid item xs={12} sm={6}>
@@ -964,7 +881,7 @@ function RouteDetail() {
                     fullWidth
                     sx={{ mb: 1, borderRadius: 2 }}
                   >
-                    Browse Bikes
+                    Cumpara
                   </Button>
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -975,7 +892,7 @@ function RouteDetail() {
                     fullWidth
                     sx={{ mb: 1, borderRadius: 2 }}
                   >
-                    View Rentals
+                    Inchiriaza
                   </Button>
                 </Grid>
               </Grid>

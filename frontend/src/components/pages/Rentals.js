@@ -2,6 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { 
+  Pagination,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Box
+} from '@mui/material';
 
 function Rentals() {
   const [selectedLocation, setSelectedLocation] = useState('');
@@ -10,6 +18,8 @@ function Rentals() {
   const [filteredBikes, setFilteredBikes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
   
   // Get type filter from URL if it exists
   const search = window.location.search;
@@ -64,7 +74,24 @@ useEffect(() => {
   fetchBikes();
 }, [selectedLocation]);
 
-  // Rest of your component remains the same..
+  // Calculate pagination
+  const indexOfLastBike = page * itemsPerPage;
+  const indexOfFirstBike = indexOfLastBike - itemsPerPage;
+  const currentBikes = filteredBikes.slice(indexOfFirstBike, indexOfLastBike);
+  const totalPages = Math.ceil(filteredBikes.length / itemsPerPage);
+
+  // Handle page change
+  const handlePageChange = (event, value) => {
+    setPage(value);
+    // Scroll to top when changing page
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Handle items per page change
+  const handleItemsPerPageChange = (event) => {
+    setItemsPerPage(event.target.value);
+    setPage(1); // Reset to first page when changing items per page
+  };
 
   return (
     <div className="container py-5" >
@@ -112,11 +139,31 @@ useEffect(() => {
         </div>
       ) : (
         <>
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <div className="d-flex align-items-center gap-3">
+              <span>
+                Showing {indexOfFirstBike + 1}-{Math.min(indexOfLastBike, filteredBikes.length)} of {filteredBikes.length} bikes
+              </span>
+              <FormControl size="small" sx={{ minWidth: 120 }}>
+                <InputLabel>Items per page</InputLabel>
+                <Select
+                  value={itemsPerPage}
+                  label="Items per page"
+                  onChange={handleItemsPerPageChange}
+                >
+                  <MenuItem value={12}>12</MenuItem>
+                  <MenuItem value={24}>24</MenuItem>
+                  <MenuItem value={48}>48</MenuItem>
+                </Select>
+              </FormControl>
+            </div>
+          </div>
+
           <h2 className="mb-4">
             Available Bikes in {locations.find(loc => loc.id === selectedLocation)?.name}
           </h2>
           <div className="row">
-            {bikes.map(bike => (
+            {currentBikes.map(bike => (
               <div className="col-md-4 mb-4" key={bike.id}>
                 <div className="card h-100 shadow-sm">
                   <img 
@@ -140,6 +187,21 @@ useEffect(() => {
               </div>
             ))}
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+              <Pagination 
+                count={totalPages} 
+                page={page} 
+                onChange={handlePageChange}
+                color="primary"
+                size="large"
+                showFirstButton
+                showLastButton
+              />
+            </Box>
+          )}
         </>
       )}
     </div>

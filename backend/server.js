@@ -39,6 +39,6 @@ app.use('/api/admin/bikes', require('./routes/admin/bikes'));
 app.use('/api/admin/users', require('./routes/admin/users'));
 app.use('/api/admin/orders', require('./routes/admin/orders'));
 app.use('/api/admin/statistics', statisticsRoutes);
-
+app.use('/api/admin/routes', require('./routes/admin/routes'));
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

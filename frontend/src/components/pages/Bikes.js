@@ -21,7 +21,12 @@ import {
   Alert,
   Paper,
   Stack,
-  IconButton
+  IconButton,
+  Pagination,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import {
   DirectionsBike as BikeIcon,
@@ -40,6 +45,8 @@ function Bikes() {
   const [error, setError] = useState(null);
   const [activeFilters, setActiveFilters] = useState(null);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [page, setPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
 
   // Fetch locations for rental mode - using useCallback to prevent unnecessary re-renders
   const fetchLocations = useCallback(async () => {
@@ -144,6 +151,25 @@ function Bikes() {
     setFilteredBikes(filtered);
   }, [bikes, mode]);
 
+  // Calculate pagination
+  const indexOfLastBike = page * itemsPerPage;
+  const indexOfFirstBike = indexOfLastBike - itemsPerPage;
+  const currentBikes = filteredBikes.slice(indexOfFirstBike, indexOfLastBike);
+  const totalPages = Math.ceil(filteredBikes.length / itemsPerPage);
+
+  // Handle page change
+  const handlePageChange = (event, value) => {
+    setPage(value);
+    // Scroll to top when changing page
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Handle items per page change
+  const handleItemsPerPageChange = (event) => {
+    setItemsPerPage(event.target.value);
+    setPage(1); // Reset to first page when changing items per page
+  };
+
   return (
     <Container maxWidth="lg" sx={{ py: 5 }}>
       <Box textAlign="center" mb={5}>
@@ -209,24 +235,40 @@ function Bikes() {
             >
               <WarningIcon sx={{ fontSize: 60, color: '#3b5af5', mb: 2 }} />
               <Typography variant="h5" gutterBottom fontWeight="medium">
-                No bikes match your filters
+              Niciun bicicletă nu corespunde criteriilor dumneavoastră  
               </Typography>
               <Typography variant="body1">
-                Try adjusting your filter criteria to see more bikes.
+              Încercați să ajustați criteriile dumneavoastră pentru a vedea mai multe biciclete.
               </Typography>
             </Paper>
           ) : (
             <Box>
               {/* Results count and view toggle */}
               <Paper elevation={2} sx={{ p: 2, mb: 3, borderRadius: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="body1">
-                  <Box component="span" fontWeight="medium">{filteredBikes.length}</Box> {filteredBikes.length === 1 ? 'bike' : 'bikes'} found
-                  {activeFilters && (
-                    <Typography component="span" color="text.secondary" variant="body2" sx={{ ml: 1 }}>
-                      (Filtered from {bikes.length})
-                    </Typography>
-                  )}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Typography variant="body1">
+                    <Box component="span" fontWeight="medium">
+                      {filteredBikes.length}
+                    </Box> {filteredBikes.length === 1 ? 'bike' : 'bikes'} found
+                    {activeFilters && (
+                      <Typography component="span" color="text.secondary" variant="body2" sx={{ ml: 1 }}>
+                        (Filtered from {bikes.length})
+                      </Typography>
+                    )}
+                  </Typography>
+                  <FormControl size="small" sx={{ minWidth: 120 }}>
+                    <InputLabel>Items per page</InputLabel>
+                    <Select
+                      value={itemsPerPage}
+                      label="Items per page"
+                      onChange={handleItemsPerPageChange}
+                    >
+                      <MenuItem value={12}>12</MenuItem>
+                      <MenuItem value={24}>24</MenuItem>
+                      <MenuItem value={48}>48</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
                 <Stack direction="row" spacing={1}>
                   <IconButton 
                     size="small" 
@@ -247,7 +289,7 @@ function Bikes() {
 
               {/* Bikes grid */}
               <Grid container spacing={3}>
-                {filteredBikes.map(bike => (
+                {currentBikes.map(bike => (
                   <Grid item xs={12} sm={viewMode === 'grid' ? 6 : 12} md={viewMode === 'grid' ? 4 : 12} key={bike._id}>
                     <Card 
                       elevation={3} 
@@ -335,6 +377,21 @@ function Bikes() {
                   </Grid>
                 ))}
               </Grid>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+                  <Pagination 
+                    count={totalPages} 
+                    page={page} 
+                    onChange={handlePageChange}
+                    color="primary"
+                    size="large"
+                    showFirstButton
+                    showLastButton
+                  />
+                </Box>
+              )}
             </Box>
           )}
         </Grid>

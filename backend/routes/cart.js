@@ -44,10 +44,14 @@ router.post('/', auth, async (req, res) => {
       return res.status(400).json({ msg: 'Start date, end date, and location are required for rentals' });
     }
 
-    // Check if bike exists
+    // Check if bike exists and is active
     const bike = await Bike.findById(bikeId);
     if (!bike) {
       return res.status(404).json({ msg: 'Bike not found' });
+    }
+
+    if (!bike.isActive) {
+      return res.status(400).json({ msg: 'Bicicleta nu este disponibilă momentan' });
     }
 
     // For purchase, check if there's enough inventory
@@ -73,24 +77,37 @@ router.post('/', auth, async (req, res) => {
       if (!locationInventory || locationInventory.stock <= 0) {
         return res.status(400).json({ msg: 'Bike not available at this location' });
       }
+      
+      // Verifică dacă există suficiente biciclete pentru cantitatea solicitată
+      if (locationInventory.stock < quantity) {
+        return res.status(400).json({ msg: `Nu există suficiente biciclete disponibile pentru închiriere la această locație. Disponibil: ${locationInventory.stock}` });
+      }
     }
 
-    // Check if item is already in cart
-    let cartItem = await CartItem.findOne({
+    // Define search criteria based on type
+    let searchCriteria = {
       user: req.user.id,
       bike: bikeId,
       type
-    });
+    };
+    
+    // For rentals, also consider dates and location when checking if it exists in cart
+    if (type === 'rental') {
+      searchCriteria.startDate = new Date(startDate);
+      searchCriteria.endDate = new Date(endDate);
+      searchCriteria.location = locationId;
+    }
+
+    // Check if item is already in cart
+    let cartItem = await CartItem.findOne(searchCriteria);
 
     if (cartItem) {
       // Update quantity if it's a purchase
       if (type === 'purchase') {
         cartItem.quantity = quantity || cartItem.quantity + 1;
       } else {
-        // For rentals, update dates and location
-        cartItem.startDate = startDate;
-        cartItem.endDate = endDate;
-        cartItem.location = locationId;
+        // Pentru închiriere, folosim exact cantitatea specificată sau incrementăm
+        cartItem.quantity = quantity !== undefined ? Number(quantity) : cartItem.quantity + 1;
       }
       
       await cartItem.save();
@@ -99,7 +116,7 @@ router.post('/', auth, async (req, res) => {
       cartItem = new CartItem({
         user: req.user.id,
         bike: bikeId,
-        quantity: quantity || 1,
+        quantity: quantity !== undefined ? Number(quantity) : 1,
         type,
         startDate: type === 'rental' ? startDate : null,
         endDate: type === 'rental' ? endDate : null,
@@ -142,7 +159,7 @@ router.put('/:id', auth, async (req, res) => {
     
     // Update the quantity
     if (quantity) {
-      cartItem.quantity = quantity;
+      cartItem.quantity = Number(quantity);
     }
     
     // For rental items, we could update dates if needed

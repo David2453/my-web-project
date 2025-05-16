@@ -120,7 +120,7 @@ router.post('/', auth, async (req, res) => {
         const startDate = new Date(item.startDate);
         const endDate = new Date(item.endDate);
         const days = Math.max(1, Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)));
-        itemPrice = item.bike.rentalPrice * days;
+        itemPrice = item.bike.rentalPrice * days * item.quantity;
         
         // Update rental inventory
         const bike = await Bike.findById(item.bike._id);
@@ -147,13 +147,6 @@ router.post('/', auth, async (req, res) => {
           });
         }
 
-        // Verifică dacă există stoc disponibil
-        if (locationInventory.stock < 1) {
-          return res.status(400).json({ 
-            msg: `Bicicleta ${bike.name} nu este disponibilă la ${item.location.name} în perioada ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}. Vă rugăm să alegeți o altă perioadă sau o altă locație.` 
-          });
-        }
-        
         // Verifică dacă există rezervări suprapuse
         const overlappingReservations = await Order.find({
           'items.bike': bike._id,
@@ -170,7 +163,14 @@ router.post('/', auth, async (req, res) => {
           });
         }
         
-        locationInventory.stock -= 1;
+        // Verifică dacă există stoc suficient pentru cantitatea selectată
+        if (locationInventory.stock < item.quantity) {
+          return res.status(400).json({ 
+            msg: `Nu există suficiente biciclete ${bike.name} disponibile la ${item.location.name} în perioada selectată. Disponibil: ${locationInventory.stock}, Solicitat: ${item.quantity}` 
+          });
+        }
+        
+        locationInventory.stock -= item.quantity;
         await bike.save();
       }
       

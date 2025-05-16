@@ -33,8 +33,15 @@ router.post('/register', async (req, res) => {
 
     // Add profile data if available
     if (profile) {
-      // You would need to update your User model to include these fields
-      // or create a separate Profile model
+      // Setăm datele de profil direct în obiectul user
+      user.profile = {
+        firstName: profile.firstName || '',
+        lastName: profile.lastName || '',
+        phone: profile.phone || '',
+        address: profile.address || ''
+      };
+      
+      console.log('Profile data added:', user.profile);
     }
 
     // Hash password
@@ -43,6 +50,8 @@ router.post('/register', async (req, res) => {
 
     // Save user to database
     await user.save();
+    
+    console.log('User registered with profile:', user.profile);
 
     // Create JWT payload
     const payload = {

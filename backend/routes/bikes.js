@@ -5,6 +5,7 @@ const mongoose = require('mongoose'); // Make sure mongoose is imported
 const Bike = require('../models/Bikes');
 const Location = require('../models/Locations');
 const auth = require('../middleware/auth');
+const upload = require('../middleware/uploadMiddleware');
 
 // @route   GET api/bikes
 // @desc    Get all bikes
@@ -24,8 +25,11 @@ router.get('/', async (req, res) => {
 // @access  Public
 router.get('/purchase', async (req, res) => {
   try {
-    // Get all bikes with purchase stock > 0
-    const bikes = await Bike.find({ purchaseStock: { $gt: 0 } });
+    // Get all bikes with purchase stock > 0 and isActive = true
+    const bikes = await Bike.find({ 
+      purchaseStock: { $gt: 0 },
+      isActive: true 
+    });
     res.json(bikes);
   } catch (err) {
     console.error(err.message);
@@ -55,14 +59,15 @@ router.get('/rental/:locationParam', async (req, res) => {
       
       console.log(`Found location: ${location.name}, ID: ${location._id}`);
       
-      // Find bikes with rental inventory at the specified location
+      // Find bikes with rental inventory at the specified location and isActive = true
       const bikes = await Bike.find({
         'rentalInventory': {
           $elemMatch: {
             'location': location._id,
             'stock': { $gt: 0 }
           }
-        }
+        },
+        isActive: true
       }).populate('rentalInventory.location', 'name city code');
       
       console.log(`Found ${bikes.length} bikes for location ${location.name}`);
@@ -79,8 +84,11 @@ router.get('/rental/:locationParam', async (req, res) => {
 // @access  Public
 router.get('/featured/purchase', async (req, res) => {
   try {
-    // Get limited number of bikes with purchase stock > 0
-    const bikes = await Bike.find({ purchaseStock: { $gt: 0 } })
+    // Get limited number of bikes with purchase stock > 0 and isActive = true
+    const bikes = await Bike.find({ 
+      purchaseStock: { $gt: 0 },
+      isActive: true 
+    })
       .sort({ createdAt: -1 }) // Newest first
       .limit(4); // Limit to 4 bikes
     
@@ -102,7 +110,8 @@ router.get('/featured/rental/:locationId', async (req, res) => {
           location: req.params.locationId,
           stock: { $gt: 0 }
         }
-      }
+      },
+      isActive: true
     })
     .sort({ createdAt: -1 }) // Newest first
     .limit(4) // Limit to 4 bikes
@@ -178,7 +187,7 @@ router.get('/search', async (req, res) => {
 // @route   POST api/bikes
 // @desc    Create a new bike
 // @access  Private (Admin only)
-router.post('/', auth, async (req, res) => {
+router.post('/', auth, upload.single('image'), async (req, res) => {
   try {
     // Check if user is admin
     if (req.user.role !== 'admin') {
@@ -191,7 +200,6 @@ router.post('/', auth, async (req, res) => {
       description,
       price,
       rentalPrice,
-      image,
       features,
       purchaseStock,
       rentalInventory
@@ -204,10 +212,12 @@ router.post('/', auth, async (req, res) => {
       description,
       price,
       rentalPrice,
-      image,
+      image: req.file ? `/uploads/bikes/${req.file.filename}` : '',
       features,
       purchaseStock,
-      rentalInventory
+      rentalInventory: typeof rentalInventory === 'string' 
+        ? JSON.parse(rentalInventory) 
+        : rentalInventory
     });
 
     const bike = await newBike.save();
@@ -221,12 +231,15 @@ router.post('/', auth, async (req, res) => {
 // @route   PUT api/bikes/:id
 // @desc    Update a bike
 // @access  Private (Admin only)
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', auth, upload.single('image'), async (req, res) => {
   try {
     // Check if user is admin
     if (req.user.role !== 'admin') {
       return res.status(403).json({ msg: 'Not authorized' });
     }
+
+    console.log('Received file:', req.file);
+    console.log('Received body:', req.body);
 
     const bike = await Bike.findById(req.params.id);
 
@@ -241,10 +254,10 @@ router.put('/:id', auth, async (req, res) => {
       description,
       price,
       rentalPrice,
-      image,
       features,
       purchaseStock,
-      rentalInventory
+      rentalInventory,
+      isActive
     } = req.body;
 
     if (name) bike.name = name;
@@ -252,15 +265,35 @@ router.put('/:id', auth, async (req, res) => {
     if (description) bike.description = description;
     if (price) bike.price = price;
     if (rentalPrice) bike.rentalPrice = rentalPrice;
-    if (image) bike.image = image;
-    if (features) bike.features = features;
+    if (req.file) {
+      console.log('Setting new image path:', `/uploads/bikes/${req.file.filename}`);
+      bike.image = `/uploads/bikes/${req.file.filename}`;
+    }
+    if (features) {
+      try {
+        bike.features = typeof features === 'string' ? JSON.parse(features) : features;
+      } catch (err) {
+        console.error('Error parsing features:', err);
+      }
+    }
     if (purchaseStock !== undefined) bike.purchaseStock = purchaseStock;
-    if (rentalInventory) bike.rentalInventory = rentalInventory;
+    if (isActive !== undefined) bike.isActive = isActive === 'true';
+    if (rentalInventory) {
+      try {
+        bike.rentalInventory = typeof rentalInventory === 'string' 
+          ? JSON.parse(rentalInventory) 
+          : rentalInventory;
+      } catch (err) {
+        console.error('Error parsing rentalInventory:', err);
+        return res.status(400).json({ msg: 'Invalid rental inventory format' });
+      }
+    }
 
-    await bike.save();
-    res.json(bike);
+    const updatedBike = await bike.save();
+    console.log('Updated bike:', updatedBike);
+    res.json(updatedBike);
   } catch (err) {
-    console.error(err.message);
+    console.error('Error in PUT /api/bikes/:id:', err);
     if (err.kind === 'ObjectId') {
       return res.status(404).json({ msg: 'Bike not found' });
     }
@@ -301,6 +334,14 @@ router.get('/:id/stock', async (req, res) => {
     const bike = await Bike.findById(req.params.id);
     if (!bike) {
       return res.status(404).json({ msg: 'Bicicleta nu a fost găsită' });
+    }
+
+    // Verifică dacă bicicleta este activă
+    if (!bike.isActive) {
+      return res.status(400).json({ 
+        msg: 'Bicicleta nu este disponibilă momentan',
+        isActive: false 
+      });
     }
 
     const { type, locationId, startDate, endDate } = req.query;

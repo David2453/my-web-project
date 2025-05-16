@@ -27,6 +27,8 @@ router.get('/me', auth, async (req, res) => {
 router.put('/me', auth, async (req, res) => {
   const { username, email, profile } = req.body;
   
+  console.log('Updating user profile with data:', { username, email, profile });
+  
   // Build user object
   const userFields = {};
   if (username) userFields.username = username;
@@ -35,10 +37,12 @@ router.put('/me', auth, async (req, res) => {
   // Build profile object if profile fields are provided
   if (profile) {
     userFields.profile = {};
-    if (profile.firstName) userFields.profile.firstName = profile.firstName;
-    if (profile.lastName) userFields.profile.lastName = profile.lastName;
-    if (profile.phone) userFields.profile.phone = profile.phone;
-    if (profile.address) userFields.profile.address = profile.address;
+    if (profile.firstName !== undefined) userFields.profile.firstName = profile.firstName;
+    if (profile.lastName !== undefined) userFields.profile.lastName = profile.lastName;
+    if (profile.phone !== undefined) userFields.profile.phone = profile.phone;
+    if (profile.address !== undefined) userFields.profile.address = profile.address;
+    
+    console.log('Profile fields to update:', userFields.profile);
   }
   
   try {
@@ -61,16 +65,49 @@ router.put('/me', auth, async (req, res) => {
       }
     }
     
-    // Update
-    const user = await User.findByIdAndUpdate(
-      req.user.id,
-      { $set: userFields },
-      { new: true }
-    ).select('-password');
+    // Update and return complete user with new profile data
+    let user = await User.findById(req.user.id);
     
-    res.json(user);
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+    
+    // Update profile fields
+    if (userFields.profile) {
+      if (!user.profile) {
+        user.profile = {};
+      }
+      
+      user.profile.firstName = userFields.profile.firstName !== undefined 
+        ? userFields.profile.firstName 
+        : user.profile.firstName;
+      
+      user.profile.lastName = userFields.profile.lastName !== undefined 
+        ? userFields.profile.lastName 
+        : user.profile.lastName;
+      
+      user.profile.phone = userFields.profile.phone !== undefined 
+        ? userFields.profile.phone 
+        : user.profile.phone;
+      
+      user.profile.address = userFields.profile.address !== undefined 
+        ? userFields.profile.address 
+        : user.profile.address;
+    }
+    
+    // Update username and email if provided
+    if (username) user.username = username;
+    if (email) user.email = email;
+    
+    await user.save();
+    
+    console.log('Updated user:', user);
+    
+    // Return user without password
+    const updatedUser = await User.findById(req.user.id).select('-password');
+    res.json(updatedUser);
   } catch (err) {
-    console.error(err.message);
+    console.error('Error updating user profile:', err.message);
     res.status(500).send('Server error');
   }
 });

@@ -42,7 +42,6 @@ import {
   Favorite as FavoriteIcon,
   ShoppingCart as CartIcon,
   History as HistoryIcon,
-  Settings as SettingsIcon,
   Edit as EditIcon,
   Save as SaveIcon,
   Cancel as CancelIcon,
@@ -59,6 +58,12 @@ function ProfilePage() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { authState, setAuthState } = useContext(AuthContext);
   const { user } = authState;
+  
+  // Debugging output for user data
+  useEffect(() => {
+    console.log('User data:', user);
+    console.log('Profile data:', user?.profile);
+  }, [user]);
   
   const [tabValue, setTabValue] = useState(0);
   const [editing, setEditing] = useState(false);
@@ -353,14 +358,10 @@ function ProfilePage() {
                   { icon: <PersonIcon />, label: "Personal Info", value: 0 },
                   { icon: <FavoriteIcon />, label: "Favorites", value: 1 },
                   { icon: <CartIcon />, label: "Cart", value: 2, link: "/cart" },
-                  { icon: <HistoryIcon />, label: "Order History", value: 3 },
-                  { icon: <SettingsIcon />, label: "Account Settings", value: 4 }
+                  { icon: <HistoryIcon />, label: "Order History", value: 3 }
                 ].map((item, index) => (
                   <ListItem
                     key={index}
-                    button
-                    selected={tabValue === item.value}
-                    onClick={(e) => handleTabChange(e, item.value)}
                     component={item.link ? Link : 'div'}
                     to={item.link}
                     sx={{
@@ -372,8 +373,10 @@ function ProfilePage() {
                       '&:hover': {
                         bgcolor: theme.palette.action.hover,
                         transform: 'translateX(4px)'
-                      }
+                      },
+                      cursor: 'pointer'
                     }}
+                    onClick={(e) => handleTabChange(e, item.value)}
                   >
                     <ListItemIcon>
                       {React.cloneElement(item.icon, { 
@@ -684,51 +687,6 @@ function ProfilePage() {
               {tabValue === 3 && (
                   <Box>
                     <OrdersTab />
-                  </Box>
-              )}
-              
-              {/* Account Settings Tab */}
-              {tabValue === 4 && (
-                  <Box>
-                    <Typography 
-                      variant="h5" 
-                      component="h2" 
-                      fontWeight="bold" 
-                      gutterBottom
-                      sx={{ 
-                        display: 'flex',
-                        alignItems: 'center',
-                        color: theme.palette.primary.main
-                      }}
-                    >
-                      <SettingsIcon sx={{ mr: 1 }} />
-                      Account Settings
-                    </Typography>
-                    
-                    <Divider sx={{ mb: 4 }} />
-                    
-                    <Card 
-                      elevation={2} 
-                      sx={{ 
-                        borderRadius: 2, 
-                        p: 2,
-                        textAlign: 'center',
-                        bgcolor: theme.palette.mode === 'dark' ? 'rgba(66, 66, 66, 0.6)' : 'rgba(255, 255, 255, 0.6)',
-                      }}
-                    >
-                      <Typography variant="body1" sx={{ py: 4 }}>
-                        Account settings and password change options will be available soon.
-                      </Typography>
-                      
-                      <Button 
-                        variant="outlined" 
-                        color="primary"
-                        disabled
-                        sx={{ borderRadius: 2, mt: 2 }}
-                      >
-                        Change Password
-                      </Button>
-                    </Card>
                   </Box>
               )}
             </Paper>

@@ -33,6 +33,10 @@ const BikeSchema = new Schema({
     type: Number,
     default: 0
   },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
   rentalInventory: [
     {
       location: {
@@ -45,7 +49,6 @@ const BikeSchema = new Schema({
       }
     }
   ],
-  // Add these new fields
   averageRating: {
     type: Number,
     default: 0

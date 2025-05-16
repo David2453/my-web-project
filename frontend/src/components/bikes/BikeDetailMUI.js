@@ -260,6 +260,17 @@ const handleTabChange = (event, newValue) => {
     
     setActionLoading(true);
     try {
+      // Verifică dacă bicicleta este activă
+      if (!bike.isActive) {
+        setSnackbar({
+          open: true,
+          message: 'Bicicleta nu este disponibilă momentan',
+          severity: 'error'
+        });
+        setActionLoading(false);
+        return false;
+      }
+
       if (mode === 'rental') {
         if (!startDate || !endDate) {
           console.log('Lipsesc datele pentru închiriere:', { startDate, endDate });
@@ -282,16 +293,32 @@ const handleTabChange = (event, newValue) => {
           setActionLoading(false);
           return false;
         }
+        
+        // Verificare validitate perioadă
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        if (end <= start) {
+          setSnackbar({
+            open: true,
+            message: 'Data de sfârșit trebuie să fie după data de început',
+            severity: 'warning'
+          });
+          setActionLoading(false);
+          return false;
+        }
       }
       
       // Create properly formatted dates
       const formattedStartDate = mode === 'rental' ? new Date(startDate).toISOString() : null;
       const formattedEndDate = mode === 'rental' ? new Date(endDate).toISOString() : null;
       
+      // Asigură-te că quantity este un număr
+      const parsedQuantity = parseInt(quantity, 10);
+      
       console.log("Date pentru adăugarea în coș:", {
         id, 
         mode, 
-        quantity, 
+        quantity: parsedQuantity, 
         startDate: formattedStartDate, 
         endDate: formattedEndDate, 
         locationId,
@@ -301,10 +328,46 @@ const handleTabChange = (event, newValue) => {
         }
       });
       
+      // Verificare stoc disponibil direct în pagina de detalii
+      try {
+        // Verifică stocul disponibil înainte de a trimite cererea
+        const stockCheck = await axios.get(`/api/bikes/${id}/stock`, {
+          params: {
+            type: mode,
+            locationId: locationId
+          }
+        });
+        
+        const { purchaseStock, rentalStock } = stockCheck.data;
+        
+        if (mode === 'purchase' && purchaseStock < parsedQuantity) {
+          setSnackbar({
+            open: true,
+            message: `Nu există suficient stoc disponibil pentru cumpărare (Disponibil: ${purchaseStock})`,
+            severity: 'error'
+          });
+          setActionLoading(false);
+          return false;
+        }
+        
+        if (mode === 'rental' && rentalStock < parsedQuantity) {
+          setSnackbar({
+            open: true,
+            message: `Nu există suficiente biciclete disponibile pentru închiriere la această locație (Disponibil: ${rentalStock})`,
+            severity: 'error'
+          });
+          setActionLoading(false);
+          return false;
+        }
+      } catch (stockError) {
+        console.error('Eroare la verificarea stocului:', stockError);
+        // Continuăm cu adăugarea în coș, CartContext va face și el verificarea
+      }
+      
       const success = await addToCart(
         id,
         mode,
-        quantity,
+        parsedQuantity,
         formattedStartDate,
         formattedEndDate,
         locationId
@@ -320,6 +383,7 @@ const handleTabChange = (event, newValue) => {
         });
         return true;
       } else {
+        // Obținem eroarea setată în CartContext pentru a o afișa utilizatorului
         throw new Error('Adăugarea în coș a eșuat');
       }
     } catch (err) {
@@ -329,9 +393,13 @@ const handleTabChange = (event, newValue) => {
         response: err.response?.data,
         status: err.response?.status
       });
+      
+      // Mesajul de eroare personalizat, incluzând orice informații de la server
+      const errorMessage = err.response?.data?.msg || err.message || 'Verificați datele introduse';
+      
       setSnackbar({
         open: true,
-        message: `Eroare la adăugarea în coș: ${err.response?.data?.msg || err.message || 'Verificați datele introduse'}`,
+        message: `Eroare la adăugarea în coș: ${errorMessage}`,
         severity: 'error'
       });
       return false;
@@ -357,7 +425,19 @@ const handleTabChange = (event, newValue) => {
     const end = new Date(endDate);
     const days = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
     
+    // Returnăm doar prețul per bicicletă, pentru afișarea clară
     return (bike.rentalPrice * days).toFixed(2);
+  };
+
+  // Calculate total rental price
+  const calculateTotalRentalPrice = () => {
+    if (!startDate || !endDate || !bike) return 0;
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const days = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
+    
+    return (bike.rentalPrice * days * quantity).toFixed(2);
   };
 
   // Handle close snackbar
@@ -752,6 +832,24 @@ const handleTabChange = (event, newValue) => {
                         }}
                       />
                     </Grid>
+                    
+                    {/* Adăugare câmp pentru cantitate */}
+                    <Grid item xs={12}>
+                      <Box display="flex" alignItems="center">
+                        <TextField
+                          label="Cantitate"
+                          type="number"
+                          InputProps={{ inputProps: { min: 1 } }}
+                          value={quantity}
+                          onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                          size="small"
+                          sx={{ width: 100, mr: 2 }}
+                        />
+                        <Typography variant="body2" color="text.secondary">
+                          Selectați numărul de biciclete pentru închiriere
+                        </Typography>
+                      </Box>
+                    </Grid>
                   </Grid>
                   
                   {startDate && endDate && (
@@ -772,35 +870,65 @@ const handleTabChange = (event, newValue) => {
                       <Typography variant="body1" gutterBottom>
                         Preț estimat pentru perioada selectată:
                       </Typography>
-                      <Typography variant="h4" fontWeight="bold">
-                        ${calculateRentalPrice()}
+                      <Typography variant="h5" fontWeight="bold">
+                        ${calculateRentalPrice()} / bicicletă
                       </Typography>
+                      {quantity > 1 && (
+                        <Typography variant="h4" fontWeight="bold" sx={{ mt: 1 }}>
+                          Total: ${calculateTotalRentalPrice()}
+                        </Typography>
+                      )}
                     </Box>
                   )}
                   
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    size="large"
-                    startIcon={actionLoading ? <CircularProgress size={20} color="inherit" /> : <CalendarIcon />}
-                    fullWidth
-                    onClick={handleBuyNow}
-                    disabled={!locationId || !startDate || !endDate || actionLoading}
-                    sx={{
-                      py: 1.5,
-                      borderRadius: 2,
-                      textTransform: 'none',
-                      fontSize: '1.1rem',
-                      fontWeight: 'bold',
-                      transition: 'all 0.3s ease-in-out',
-                      '&:hover': {
-                        transform: 'translateY(-2px)',
-                        boxShadow: 3
-                      }
-                    }}
-                  >
-                    {actionLoading ? 'Se procesează...' : 'Rezervă acum'}
-                  </Button>
+                  <Box display="flex" gap={2}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      size="large"
+                      startIcon={actionLoading ? <CircularProgress size={20} color="inherit" /> : <CartIcon />}
+                      fullWidth
+                      onClick={handleAddToCart}
+                      disabled={!locationId || !startDate || !endDate || actionLoading}
+                      sx={{
+                        py: 1.5,
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        fontSize: '1.1rem',
+                        fontWeight: 'bold',
+                        transition: 'all 0.3s ease-in-out',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: 3
+                        }
+                      }}
+                    >
+                      {actionLoading ? 'Se procesează...' : 'Adaugă în coș'}
+                    </Button>
+                    
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      size="large"
+                      fullWidth
+                      onClick={handleBuyNow}
+                      disabled={!locationId || !startDate || !endDate || actionLoading}
+                      sx={{
+                        py: 1.5,
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        fontSize: '1.1rem',
+                        fontWeight: 'bold',
+                        transition: 'all 0.3s ease-in-out',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: 3
+                        }
+                      }}
+                    >
+                      {actionLoading ? 'Se procesează...' : 'Rezervă acum'}
+                    </Button>
+                  </Box>
                 </Box>
               )}
             </Box>

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import BikeForm from './BikeForm';
 import StatisticsDashboard from './StatisticsDashboard';
+import SearchBar from '../common/SearchBar';
 import { AuthContext } from '../context/AuthContext';
 import { 
   Box, 
@@ -31,9 +32,10 @@ import {
   Add as AddIcon,
   BarChart as BarChartIcon,
   ShoppingBag as OrderIcon,
-  CheckCircle as ApproveIcon
+  CheckCircle as ApproveIcon,
+  Route as RouteIcon
 } from '@mui/icons-material';
-
+import RouteForm from './RouteForm';
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -62,20 +64,46 @@ function AdminPanel() {
   const [bikes, setBikes] = useState([]);
   const [locations, setLocations] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState({
     users: false,
     bikes: false,
     locations: false,
-    orders: false
+    orders: false,
+    routes: false
   });
   const [error, setError] = useState({
     users: null,
     bikes: null,
     locations: null,
-    orders: null
+    orders: null,
+    routes: null
   });
   const [openBikeForm, setOpenBikeForm] = useState(false);
   const [currentBike, setCurrentBike] = useState(null);
+  const [openRouteForm, setOpenRouteForm] = useState(false);
+  const [currentRoute, setCurrentRoute] = useState(null);
+  
+  // Search and filter states
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [filteredOrders, setFilteredOrders] = useState([]);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [orderSearchQuery, setOrderSearchQuery] = useState('');
+  
+  // Filter options
+  const userFilterOptions = [
+    { label: 'Admin', value: 'admin' },
+    { label: 'User', value: 'user' },
+    { label: 'Guest', value: 'guest' }
+  ];
+  
+  const orderFilterOptions = [
+    { label: 'Pending', value: 'pending' },
+    { label: 'Processing', value: 'processing' },
+    { label: 'Shipped', value: 'shipped' },
+    { label: 'Delivered', value: 'delivered' },
+    { label: 'Cancelled', value: 'cancelled' }
+  ];
 
   // Check if user is admin
   useEffect(() => {
@@ -84,7 +112,8 @@ function AdminPanel() {
         users: 'Access denied. Admin privileges required.',
         bikes: 'Access denied. Admin privileges required.',
         locations: 'Access denied. Admin privileges required.',
-        orders: 'Access denied. Admin privileges required.'
+        orders: 'Access denied. Admin privileges required.',
+        routes: 'Access denied. Admin privileges required.'
       });
     }
   }, [authState]);
@@ -99,8 +128,31 @@ function AdminPanel() {
       fetchLocations();
     } else if (tabValue === 4) {
       fetchOrders();
+    } else if (tabValue === 5) {
+      fetchRoutes();
     }
   }, [tabValue]);
+
+  // Update filtered users when users change
+  useEffect(() => {
+    if (users.length > 0) {
+      setFilteredUsers(users);
+    }
+  }, [users]);
+
+  // Update filtered orders when orders change
+  useEffect(() => {
+    if (orders.length > 0) {
+      setFilteredOrders(orders);
+    }
+  }, [orders]);
+
+  // Modificăm efectul pentru a încărca locațiile și când se deschide formularul de rute
+  useEffect(() => {
+    if (tabValue === 3 || openRouteForm) {
+      fetchLocations();
+    }
+  }, [tabValue, openRouteForm]);
 
   const fetchUsers = async () => {
     setLoading(prev => ({ ...prev, users: true }));
@@ -134,6 +186,7 @@ function AdminPanel() {
         }
       });
       setUsers(users.filter(user => user._id !== userId));
+      setFilteredUsers(filteredUsers.filter(user => user._id !== userId));
     } catch (err) {
       setError(prev => ({ 
         ...prev, 
@@ -187,14 +240,11 @@ function AdminPanel() {
       setLocations(res.data);
       setError(prev => ({ ...prev, locations: null }));
     } catch (err) {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      const mockLocations = [
-        { _id: '1', name: 'New York City Store', code: 'nyc', city: 'New York', state: 'NY', address: '123 Broadway', zipCode: '10001' },
-        { _id: '2', name: 'Los Angeles Store', code: 'la', city: 'Los Angeles', state: 'CA', address: '456 Hollywood Blvd', zipCode: '90028' },
-        { _id: '3', name: 'Chicago Store', code: 'chi', city: 'Chicago', state: 'IL', address: '789 Michigan Ave', zipCode: '60611' },
-      ];
-      setLocations(mockLocations);
-      setError(prev => ({ ...prev, locations: null }));
+      setError(prev => ({ 
+        ...prev, 
+        locations: err.response?.data.msg || 'Failed to load locations. Please try again.' 
+      }));
+      console.error('Error fetching locations:', err);
     } finally {
       setLoading(prev => ({ ...prev, locations: false }));
     }
@@ -237,6 +287,11 @@ function AdminPanel() {
         order._id === orderId ? res.data : order
       ));
       
+      // Also update filtered orders if needed
+      setFilteredOrders(filteredOrders.map(order => 
+        order._id === orderId ? res.data : order
+      ));
+      
     } catch (err) {
       setError(prev => ({ 
         ...prev, 
@@ -244,6 +299,66 @@ function AdminPanel() {
       }));
       console.error('Error updating order status:', err);
     }
+  };
+
+  // Search handlers
+  const handleUserSearch = (query, activeFilters = []) => {
+    setUserSearchQuery(query);
+    
+    let filtered = [...users];
+    
+    // Filter by search query if it exists
+    if (query.trim() !== '') {
+      const lowerQuery = query.toLowerCase();
+      filtered = filtered.filter(user => 
+        user.username.toLowerCase().includes(lowerQuery) ||
+        (user.email && user.email.toLowerCase().includes(lowerQuery)) ||
+        (user.profile && user.profile.firstName && user.profile.firstName.toLowerCase().includes(lowerQuery)) ||
+        (user.profile && user.profile.lastName && user.profile.lastName.toLowerCase().includes(lowerQuery))
+      );
+    }
+    
+    // Apply role filters if any are active
+    if (activeFilters.length > 0) {
+      filtered = filtered.filter(user => 
+        activeFilters.includes(user.role)
+      );
+    }
+    
+    setFilteredUsers(filtered);
+  };
+
+  const handleOrderSearch = (query, activeFilters = []) => {
+    setOrderSearchQuery(query);
+    
+    let filtered = [...orders];
+    
+    // Filter by search query if it exists
+    if (query.trim() !== '') {
+      const lowerQuery = query.toLowerCase();
+      filtered = filtered.filter(order => {
+        // Search by order ID
+        const orderIdMatch = order._id.toLowerCase().includes(lowerQuery);
+        
+        // For short ID search (last part of the ID)
+        const shortIdMatch = order._id.substring(order._id.length - 8).toLowerCase().includes(lowerQuery);
+        
+        // Search by customer name if available
+        const customerNameMatch = order.user && 
+          `${order.user.firstName || ''} ${order.user.lastName || ''}`.toLowerCase().includes(lowerQuery);
+        
+        return orderIdMatch || shortIdMatch || customerNameMatch;
+      });
+    }
+    
+    // Apply status filters if any are active
+    if (activeFilters.length > 0) {
+      filtered = filtered.filter(order => 
+        activeFilters.includes(order.status)
+      );
+    }
+    
+    setFilteredOrders(filtered);
   };
 
   // Format date for orders
@@ -280,28 +395,40 @@ function AdminPanel() {
 
   const handleSubmitBike = async (formData) => {
     try {
+      console.log('FormData contents:');
+      for (let pair of formData.entries()) {
+        console.log(pair[0] + ': ' + pair[1]);
+      }
+
       const headers = {
-        'x-auth-token': localStorage.getItem('token'),
+        'x-auth-token': localStorage.getItem('token')
       };
+
       let response;
       if (currentBike) {
         // Update existing bike
+        console.log('Updating bike:', currentBike._id);
         response = await axios.put(`/api/admin/bikes/${currentBike._id}`, formData, { headers });
+        console.log('Update response:', response.data);
         setBikes(bikes.map(bike => 
           bike._id === currentBike._id ? response.data : bike
         ));
       } else {
         // Add new bike
+        console.log('Creating new bike');
         response = await axios.post('/api/admin/bikes', formData, { headers });
+        console.log('Create response:', response.data);
         setBikes([...bikes, response.data]);
       }
+      setOpenBikeForm(false);
+      setCurrentBike(null);
       setError(prev => ({ ...prev, bikes: null }));
     } catch (err) {
+      console.error('Error in handleSubmitBike:', err.response?.data || err);
       setError(prev => ({ 
         ...prev, 
         bikes: err.response?.data.msg || 'Failed to save bike. Please try again.' 
       }));
-      console.error('Error saving bike:', err);
     }
   };
 
@@ -314,6 +441,97 @@ function AdminPanel() {
       case 'admin': return 'error';
       case 'user': return 'primary';
       case 'guest': return 'default';
+      default: return 'default';
+    }
+  };
+
+  const fetchRoutes = async () => {
+    setLoading(prev => ({ ...prev, routes: true }));
+    try {
+      const res = await axios.get('/api/admin/routes', {
+        headers: {
+          'x-auth-token': localStorage.getItem('token')
+        }
+      });
+      setRoutes(res.data);
+      setError(prev => ({ ...prev, routes: null }));
+    } catch (err) {
+      setError(prev => ({ 
+        ...prev, 
+        routes: err.response?.data.msg || 'Failed to load routes. Please try again.' 
+      }));
+      console.error('Error fetching routes:', err);
+    } finally {
+      setLoading(prev => ({ ...prev, routes: false }));
+    }
+  };
+
+  const handleAddRoute = () => {
+    if (locations.length === 0) {
+      fetchLocations(); // Încărcăm locațiile dacă nu sunt încărcate
+    }
+    setCurrentRoute(null);
+    setOpenRouteForm(true);
+  };
+
+  const handleEditRoute = (route) => {
+    setCurrentRoute(route);
+    setOpenRouteForm(true);
+  };
+
+  const handleDeleteRoute = async (routeId) => {
+    if (!window.confirm('Are you sure you want to delete this route?')) {
+      return;
+    }
+    try {
+      await axios.delete(`/api/admin/routes/${routeId}`, {
+        headers: {
+          'x-auth-token': localStorage.getItem('token')
+        }
+      });
+      setRoutes(routes.filter(route => route._id !== routeId));
+    } catch (err) {
+      setError(prev => ({ 
+        ...prev, 
+        routes: err.response?.data.msg || 'Failed to delete route. Please try again.' 
+      }));
+      console.error('Error deleting route:', err);
+    }
+  };
+
+  const handleSubmitRoute = async (formData) => {
+    try {
+      const headers = {
+        'x-auth-token': localStorage.getItem('token'),
+      };
+      let response;
+      if (currentRoute) {
+        // Update existing route
+        response = await axios.put(`/api/admin/routes/${currentRoute._id}`, formData, { headers });
+        setRoutes(routes.map(route => 
+          route._id === currentRoute._id ? response.data : route
+        ));
+      } else {
+        // Add new route
+        response = await axios.post('/api/admin/routes', formData, { headers });
+        setRoutes([...routes, response.data]);
+      }
+      setError(prev => ({ ...prev, routes: null }));
+      setOpenRouteForm(false);
+    } catch (err) {
+      setError(prev => ({ 
+        ...prev, 
+        routes: err.response?.data.msg || 'Failed to save route. Please try again.' 
+      }));
+      console.error('Error saving route:', err);
+    }
+  };
+
+  const getDifficultyColor = (difficulty) => {
+    switch (difficulty) {
+      case 'beginner': return 'success';
+      case 'intermediate': return 'warning';
+      case 'advanced': return 'error';
       default: return 'default';
     }
   };
@@ -354,6 +572,7 @@ function AdminPanel() {
           <Tab icon={<BikeIcon />} label="Bike Management" />
           <Tab icon={<LocationIcon />} label="Location Management" />
           <Tab icon={<OrderIcon />} label="Orders" />
+          <Tab icon={<RouteIcon />} label="Routes" />
         </Tabs>
 
         {/* Statistics Dashboard Tab */}
@@ -364,8 +583,16 @@ function AdminPanel() {
         {/* User Management Tab */}
         <TabPanel value={tabValue} index={1}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3, alignItems: 'center' }}>
-            <Typography variant="h6">User List</Typography>
+            <Typography variant="h6">User Management</Typography>
           </Box>
+          
+          <SearchBar 
+            placeholder="Search users by name, email..."
+            onSearch={handleUserSearch}
+            filterOptions={userFilterOptions}
+            value={userSearchQuery}
+          />
+          
           {error.users && (
             <Alert severity="error" sx={{ mb: 2 }}>{error.users}</Alert>
           )}
@@ -386,16 +613,16 @@ function AdminPanel() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {users.length === 0 ? (
+                  {filteredUsers.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
                         <Typography variant="body1" color="text.secondary">
-                          No users found
+                          {userSearchQuery ? 'No users found matching your search' : 'No users found'}
                         </Typography>
                       </TableCell>
                     </TableRow>
                   ) : (
-                    users.map((user) => (
+                    filteredUsers.map((user) => (
                       <TableRow key={user._id}>
                         <TableCell>{user.username}</TableCell>
                         <TableCell>{user.email}</TableCell>
@@ -609,6 +836,13 @@ function AdminPanel() {
             </Button>
           </Box>
 
+          <SearchBar 
+            placeholder="Search by order ID or customer name..."
+            onSearch={handleOrderSearch}
+            filterOptions={orderFilterOptions}
+            value={orderSearchQuery}
+          />
+
           {loading.orders ? (
             <Box display="flex" justifyContent="center" my={4}>
               <CircularProgress />
@@ -617,8 +851,10 @@ function AdminPanel() {
             <Alert severity="error" sx={{ mb: 3 }}>
               {error.orders}
             </Alert>
-          ) : orders.length === 0 ? (
-            <Alert severity="info">No orders found</Alert>
+          ) : filteredOrders.length === 0 ? (
+            <Alert severity="info">
+              {orderSearchQuery ? 'No orders found matching your search' : 'No orders found'}
+            </Alert>
           ) : (
             <TableContainer component={Paper} elevation={1}>
               <Table sx={{ minWidth: 650 }}>
@@ -634,14 +870,16 @@ function AdminPanel() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {orders.map((order) => (
+                  {filteredOrders.map((order) => (
                     <TableRow key={order._id} sx={{ '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' } }}>
                       <TableCell component="th" scope="row" sx={{ fontFamily: 'monospace' }}>
                         #{order._id.substring(order._id.length - 8).toUpperCase()}
                       </TableCell>
                       <TableCell>{formatDate(order.createdAt)}</TableCell>
                       <TableCell>
-                        {order.user ? `${order.user.firstName} ${order.user.lastName}` : 'Guest User'}
+                        {order.user?.profile ? 
+                          `${order.user.profile.firstName || ''} ${order.user.profile.lastName || ''}`.trim() || order.user.username
+                          : 'Guest User'}
                       </TableCell>
                       <TableCell>{order.items.length} {order.items.length === 1 ? 'item' : 'items'}</TableCell>
                       <TableCell align="right">${order.total.toFixed(2)}</TableCell>
@@ -677,12 +915,100 @@ function AdminPanel() {
             </TableContainer>
           )}
         </TabPanel>
+
+        {/* Routes Tab */}
+        <TabPanel value={tabValue} index={5}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3, alignItems: 'center' }}>
+            <Typography variant="h6">Bike Routes Management</Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<AddIcon />}
+              onClick={handleAddRoute}
+            >
+              Add New Route
+            </Button>
+          </Box>
+          {error.routes && (
+            <Alert severity="error" sx={{ mb: 2 }}>{error.routes}</Alert>
+          )}
+          {loading.routes ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <TableContainer component={Paper} elevation={0}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Location</TableCell>
+                    <TableCell>Distance</TableCell>
+                    <TableCell>Difficulty</TableCell>
+                    <TableCell>Est. Time</TableCell>
+                    <TableCell align="right">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {routes.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
+                        <Typography variant="body1" color="text.secondary">
+                          No routes found
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    routes.map((route) => (
+                      <TableRow key={route._id}>
+                        <TableCell>{route.name}</TableCell>
+                        <TableCell>{route.location?.name || 'N/A'}</TableCell>
+                        <TableCell>{route.distance} km</TableCell>
+                        <TableCell>
+                          <Chip 
+                            label={route.difficulty}
+                            color={getDifficultyColor(route.difficulty)}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>{route.estimatedTime} min</TableCell>
+                        <TableCell align="right">
+                          <IconButton 
+                            color="primary" 
+                            size="small"
+                            onClick={() => handleEditRoute(route)}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton 
+                            color="error" 
+                            size="small"
+                            onClick={() => handleDeleteRoute(route._id)}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </TabPanel>
       </Paper>
       <BikeForm 
         open={openBikeForm}
         handleClose={handleCloseBikeForm}
         bike={currentBike}
         onSubmit={handleSubmitBike}
+      />
+      <RouteForm 
+        open={openRouteForm}
+        handleClose={() => setOpenRouteForm(false)}
+        route={currentRoute}
+        locations={locations}
+        onSubmit={handleSubmitRoute}
       />
     </Container>
   );

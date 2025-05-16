@@ -10,7 +10,14 @@ const User = require('../../models/Users');
 router.get('/', adminMiddleware, async (req, res) => {
   try {
     const orders = await Order.find()
-      .populate('user', 'firstName lastName email')
+      .populate({
+        path: 'user',
+        select: 'username profile',
+        populate: {
+          path: 'profile',
+          select: 'firstName lastName'
+        }
+      })
       .populate('items.bike', 'name type image')
       .populate('items.location', 'name city')
       .sort({ createdAt: -1 });

@@ -125,13 +125,14 @@ export const CartProvider = ({ children }) => {
     if (!authState.isAuthenticated) {
       console.error('Utilizatorul nu este autentificat');
       setError('Trebuie să fiți autentificat pentru a adăuga în coș');
-      return false;
+      throw new Error('Trebuie să fiți autentificat pentru a adăuga în coș');
     }
 
     try {
       // Verifică și setează token-ul pentru toate cererile
       const token = localStorage.getItem('token');
       if (!token) {
+        setError('Token-ul de autentificare lipsește');
         throw new Error('Token-ul de autentificare lipsește');
       }
       axios.defaults.headers.common['x-auth-token'] = token;
@@ -139,7 +140,9 @@ export const CartProvider = ({ children }) => {
       // Verifică dacă bicicleta există înainte de a o adăuga în coș
       const bikeResponse = await axios.get(`/api/bikes/${bikeId}`);
       if (!bikeResponse.data || !bikeResponse.data._id) {
-        throw new Error('Bicicleta nu a fost găsită');
+        const errorMsg = 'Bicicleta nu a fost găsită';
+        setError(errorMsg);
+        throw new Error(errorMsg);
       }
 
       // Verifică stocul disponibil
@@ -155,22 +158,24 @@ export const CartProvider = ({ children }) => {
       const { purchaseStock, rentalStock } = stockCheck.data;
 
       if (itemType === 'purchase' && purchaseStock < quantity) {
-        const error = `Nu există suficient stoc disponibil pentru cumpărare (Disponibil: ${purchaseStock})`;
-        setError(error);
-        return false;
+        const errorMsg = `Nu există suficient stoc disponibil pentru cumpărare (Disponibil: ${purchaseStock})`;
+        setError(errorMsg);
+        throw new Error(errorMsg);
       }
 
       if (itemType === 'rental' && rentalStock < quantity) {
-        const error = `Nu există suficiente biciclete disponibile pentru închiriere la această locație (Disponibil: ${rentalStock})`;
-        setError(error);
-        return false;
+        const errorMsg = `Nu există suficiente biciclete disponibile pentru închiriere la această locație (Disponibil: ${rentalStock})`;
+        setError(errorMsg);
+        throw new Error(errorMsg);
       }
 
       // Verifică dacă locația există pentru închiriere
       if (itemType === 'rental' && locationId) {
         const locationResponse = await axios.get(`/api/locations/${locationId}`);
         if (!locationResponse.data || !locationResponse.data._id) {
-          throw new Error('Locația nu a fost găsită');
+          const errorMsg = 'Locația nu a fost găsită';
+          setError(errorMsg);
+          throw new Error(errorMsg);
         }
       }
 
@@ -178,7 +183,7 @@ export const CartProvider = ({ children }) => {
       const data = {
         bikeId,
         type: itemType,
-        quantity,
+        quantity: Number(quantity),
         ...(itemType === 'rental' && {
           startDate,
           endDate,
@@ -186,12 +191,23 @@ export const CartProvider = ({ children }) => {
         })
       };
       
-      const res = await axios.post('/api/cart', data);
-      console.log('Răspuns adăugare în coș:', res.data);
+      console.log('Date trimise în cererea POST:', data);
+      
+      let res;
+      try {
+        res = await axios.post('/api/cart', data);
+        console.log('Răspuns adăugare în coș:', res.data);
+      } catch (postError) {
+        const errorMsg = postError.response?.data?.msg || 'Eroare la adăugarea în coș';
+        setError(errorMsg);
+        throw new Error(errorMsg);
+      }
       
       // Verifică dacă răspunsul conține bicicleta
       if (!res.data.bike || !res.data.bike._id) {
-        throw new Error('Bicicleta nu a fost adăugată corect în coș');
+        const errorMsg = 'Bicicleta nu a fost adăugată corect în coș';
+        setError(errorMsg);
+        throw new Error(errorMsg);
       }
       
       await fetchCart(); // Reîncarcă coșul după adăugare
@@ -201,7 +217,8 @@ export const CartProvider = ({ children }) => {
       const errorMessage = err.response?.data?.msg || err.message || 'Nu s-a putut adăuga în coș';
       console.error('Mesaj de eroare:', errorMessage);
       setError(errorMessage);
-      return false;
+      // Aruncă eroarea mai departe pentru a fi prinsă în componenta care a apelat funcția
+      throw err;
     }
   };
 
@@ -355,7 +372,7 @@ export const CartProvider = ({ children }) => {
         const start = new Date(item.startDate);
         const end = new Date(item.endDate);
         const days = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
-        return total + (item.rentalPrice * days);
+        return total + (item.rentalPrice * days * item.quantity);
       }
       return total;
     }, 0);

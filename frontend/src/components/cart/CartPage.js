@@ -582,7 +582,10 @@ const handlePaymentInputChange = (e) => {
                                 {new Date(item.startDate).toLocaleDateString()} - {new Date(item.endDate).toLocaleDateString()} ({calculateDays(item.startDate, item.endDate)} days)
                               </Typography>
                               <Typography variant="body2" fontWeight="bold" color="primary.main" sx={{ mt: 1 }}>
-                                ${item.rentalPrice.toFixed(2)}/day · ${(item.rentalPrice * calculateDays(item.startDate, item.endDate)).toFixed(2)} total
+                                ${item.rentalPrice.toFixed(2)}/day · ${(item.rentalPrice * calculateDays(item.startDate, item.endDate) * item.quantity).toFixed(2)} total
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                                Cantitate: {item.quantity}
                               </Typography>
                             </Box>
                             
@@ -591,9 +594,45 @@ const handlePaymentInputChange = (e) => {
                                 mt: isMobile ? 2 : 0,
                                 ml: isMobile ? 0 : 2,
                                 display: 'flex',
-                                justifyContent: 'flex-end'
+                                flexDirection: 'column',
+                                alignItems: 'flex-end',
+                                gap: 1
                               }}
                             >
+                              <Box 
+                                sx={{ 
+                                  display: 'flex', 
+                                  alignItems: 'center',
+                                }}
+                              >
+                                <IconButton 
+                                  size="small" 
+                                  onClick={() => handleQuantityChange(item.id, -1, item.quantity)}
+                                  disabled={item.quantity <= 1}
+                                >
+                                  <RemoveIcon fontSize="small" />
+                                </IconButton>
+                                
+                                <TextField
+                                  value={item.quantity}
+                                  size="small"
+                                  variant="outlined"
+                                  onChange={(e) => handleQuantityInput(item.id, e.target.value)}
+                                  inputProps={{ 
+                                    min: 1, 
+                                    style: { textAlign: 'center' } 
+                                  }}
+                                  sx={{ width: 60, mx: 1 }}
+                                />
+                                
+                                <IconButton 
+                                  size="small" 
+                                  onClick={() => handleQuantityChange(item.id, 1, item.quantity)}
+                                >
+                                  <AddIcon fontSize="small" />
+                                </IconButton>
+                              </Box>
+                              
                               <IconButton 
                                 color="error" 
                                 onClick={() => handleRemoveItemClick(item)}
